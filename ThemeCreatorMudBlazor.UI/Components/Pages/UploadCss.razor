@@ -1,0 +1,161 @@
+﻿@page "/uploadcss"
+@using System.Security.Cryptography
+@using System.Text
+@using System.Diagnostics
+@inject ISnackbar Snackbar
+@inject IThemeCreatorService themeService
+@inject IThemeStateService themeState
+
+<PageTitle>CSS Upload Section</PageTitle>
+
+<MudText Typo="Typo.h3">CSS Upload Section</MudText>
+<br />
+<MudText Typo="Typo.body1">
+    Upload Bootstrap CSS files no larger than 1MB here to create a potential new theme.
+</MudText>
+<br />
+<MudFileUpload T="IBrowserFile" FilesChanged="UploadFile" Accept="@string.Join(",", AllowedExtensions)">
+    <ActivatorContent>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.CloudUpload">Upload Text File</MudButton>
+    </ActivatorContent>
+</MudFileUpload>
+
+<MudText>
+    Bootstrap uploading is not perfect, Very little typography and layout property information is gathered and Zindex is complete ignored.
+    Not all themes are compatible but so far 90% of the ones I've tried have worked.
+</MudText>
+<br />
+@if (API?.ToLower() == "boss")
+{
+    <MudItem xs="12" sm="2">
+        <MudTextField Label="Key" @bind-Value="bossKey" AdornmentIcon="@Icons.Material.Filled.Key" Underline="false" Adornment="Adornment.End"
+        OnAdornmentClick="AmIBossKey" InputType="InputType.Password" />
+    </MudItem>
+}
+
+@if (IsBoss)
+{
+    <MudText Typo="Typo.h6">Save Theme</MudText>
+    <MudText Typo="Typo.body1">Save your theme to the database for later use.</MudText>
+    <MudTextField Label="Theme Name" @bind-Value="themeState.ThemeName" Immediate="true" />
+    <MudTextField Label="Theme Other Text" @bind-Value="themeState.ThemeOtherText" Immediate="true" />
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveTheme">Save Theme</MudButton>
+}
+
+@code {
+    [SupplyParameterFromQuery]
+    [Parameter] public string? API { get; set; } 
+    private bool IsBoss = false;
+    private string bossKey = string.Empty;
+    readonly string[] AllowedExtensions = { ".css" };
+    const long MaxFileSize = 1024 * 1024; // 1MB in bytes
+
+    protected override void OnInitialized()
+    {
+        if (Debugger.IsAttached)
+        {
+            IsBoss = true;
+        }
+    }
+
+    private void AmIBossKey()
+    {
+        string newHash = HashHelper.GenerateHash(bossKey);
+        IsBoss = HashHelper.VerifyHash(bossKey, "A6C35644DA61D4EA6B1F1754374E15AF167ED4EDB87DA64A89E10D318A60BF81");
+        if (IsBoss)
+        {
+            ShowNotification("You are the boss!", Severity.Success);
+        }
+        else
+        {
+            ShowNotification("You are not the boss!", Severity.Warning);
+        }
+    }
+
+    private async Task SaveTheme()
+    {
+        var result = await themeService.SaveTheme(themeState);
+        if (result)
+        {
+            await themeState.UpdateThemeId(themeState.ThemeId, true, true);
+            Snackbar.Add("Theme Saved Successfully", Severity.Success);
+        }
+        else
+        {
+            Snackbar.Add("Theme Save Failed", Severity.Error);
+        }
+    }
+
+    private async Task UploadFile(IBrowserFile file)
+    {
+        if (file == null)
+            return;
+
+        if (file.Size > MaxFileSize)
+        {
+            ShowNotification("File size exceeds the 1MB limit.", Severity.Warning);
+            return;
+        }
+
+        var fileExtension = Path.GetExtension(file.Name).ToLowerInvariant();
+        if (!AllowedExtensions.Contains(fileExtension))
+        {
+            ShowNotification("Only css files (.css) are allowed.", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            // Read the content of the file
+            var fileContent = await new StreamReader(file.OpenReadStream()).ReadToEndAsync();
+            if (fileContent.Length > 0)
+            {
+                ShowNotification("File loaded successfully, processing...", Severity.Success);
+                (string themeName, string otherText, List<ThemeSelection> themeSelections, List<CustomShadow> customShadows, List<CustomLayoutProperty> customLayoutProperties, List<CustomTypography> customTypographies, List<CustomZIndex> customZIndices)
+                    themeStatus = await themeService.ImportBootswatchTheme(fileContent);
+                await themeState.ResetTheme();
+                await themeState.UpdateThemeData(themeStatus.themeSelections, true, true);
+                await themeState.UpdateThemeData(themeStatus.customShadows, true, true);
+                await themeState.UpdateThemeData(themeStatus.customLayoutProperties, true, true);
+                await themeState.UpdateThemeData(themeStatus.customTypographies, true, true);
+                await themeState.UpdateThemeData(themeStatus.customZIndices, true, true);
+                themeState.ThemeName = themeStatus.themeName;
+                themeState.ThemeOtherText = themeStatus.otherText;
+                await themeState.UpdateThemeId(-1);
+                ShowNotification($"{themeStatus.themeName} imported successfully, don't forget to save it!", Severity.Success);
+            }
+            else
+            {
+                ShowNotification($"Upload failed", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowNotification($"An error occurred: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void ShowNotification(string message, Severity severity)
+    {
+        Snackbar.Add(message, severity);
+    }
+
+    public class HashHelper
+    {
+        public static string GenerateHash(string input, string algorithm = "SHA256")
+        {
+            using (var hashAlgorithm = HashAlgorithm.Create(algorithm))
+            {
+                byte[] data = Encoding.UTF8.GetBytes(input);
+                byte[] hashBytes = hashAlgorithm.ComputeHash(data);
+                return Convert.ToHexString(hashBytes);
+            }
+        }
+
+        public static bool VerifyHash(string input, string storedHash)
+        {
+            string newHash = GenerateHash(input);
+            return newHash.Equals(storedHash, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+}

@@ -1,0 +1,125 @@
+﻿@inherits LayoutComponentBase
+@inject IThemeStateService themeState
+
+<MudThemeProvider @bind-IsDarkMode="isDarkMode" />
+<MudDialogProvider BackdropClick="false" CloseOnEscapeKey="true" CloseButton="true" />
+<MudSnackbarProvider />
+<MudPopoverProvider />
+
+<CascadingValue Value="@isDarkMode" Name="IsDarkMode" />
+<CascadingValue Value="@_themeId" Name="SelectedThemeId" />
+
+<MudLayout>
+		<MudAppBar Elevation="4" Fixed="true" Dense="true">
+		    <MudIconButton Color="Color.Inherit" Icon="@Icons.Material.Outlined.Menu" Edge="Edge.Start" 
+                OnClick="@(() => _themeDrawer.ToggleDrawer())" />
+			<MudText Style="font-weight: bold;" Class="ml-3">MudBlazor Theme Creator</MudText>
+			<MudSpacer />
+            <MudTooltip Text="Home">
+                <MudIconButton Href="/" Icon="@Icons.Material.Outlined.Home" Color="Color.Inherit" />
+            </MudTooltip>
+            <MudTooltip Text="CSS Variable Lookup">
+                <MudIconButton Href="/Style" Icon="@Icons.Material.Outlined.Css" Color="Color.Inherit" />
+            </MudTooltip>
+            <MudTooltip Text="Upload Bootstrap Theme">
+                <MudIconButton Href="/uploadcss" Icon="@Icons.Material.Outlined.CloudUpload" Color="Color.Inherit" />
+            </MudTooltip>
+            <MudTooltip Text="Export Theme">
+                <MudIconButton Href="/export" Icon="@Icons.Material.Outlined.ImportExport" Color="Color.Inherit" />
+            </MudTooltip>
+            <MudTooltip Text="About / Issues">
+                <MudIconButton Href="/about" Icon="@Icons.Material.Outlined.Info" Color="Color.Inherit" />
+            </MudTooltip>
+		    <MudTooltip Text="Toggle Dark/Light Mode">
+                <MudIconButton id="darkToggle" OnClick="@(() => _themeDrawer.ToggleDark())" 
+					   Icon="@(!isDarkMode ? Icons.Material.Outlined.WbSunny : Icons.Material.Outlined.NightsStay)"
+					   Color="Color.Inherit" />
+            </MudTooltip>
+		
+		</MudAppBar>
+		@if (!DoNotRenderForUnitTest)
+		{
+            <ThemeDrawer @ref="_themeDrawer" @bind-IsDrawerOpen="isDrawerOpen"
+					 @bind-IsDarkMode="isDarkMode" @bind-IsDarkMode:after="DarkModeChanged" 
+                     SelectedTheme="_themeId" />
+			<MudMainContent Class="mt-12 pa-4">
+				<ErrorBoundary>
+					<ChildContent>
+						@Body
+					</ChildContent>
+					<ErrorContent>
+						<Error />
+					</ErrorContent>
+				</ErrorBoundary>
+			</MudMainContent>
+		}
+</MudLayout>
+
+@code {
+    private bool isDarkMode { get; set; } = false;
+    private bool isDrawerOpen { get; set; } = true;
+    private ThemeDrawer _themeDrawer { get; set; } = default!;
+    private string themeDarkLightCSS = string.Empty;
+    private string themeStaticCSS = string.Empty;
+    private int _themeId = 1;
+
+    [Parameter]
+    public bool DoNotRenderForUnitTest { get; set; } = false;
+
+    protected override void OnInitialized()
+    {        
+        themeState.OnChange += CssChanged;
+    }
+
+    private void Dispose()
+    {
+        themeState.OnChange -= CssChanged;
+    }    
+
+    private void CssChanged()
+    {
+        bool updateState = false;
+        var tempStatic = themeState.GenerateStaticCSS();
+        var tempDarkLight = themeState.GenerateDarkLightCSS(isDarkMode);
+        if (tempStatic!= themeStaticCSS)
+        {
+            themeStaticCSS = tempStatic;
+            updateState = true;
+        }
+        if (tempDarkLight != themeDarkLightCSS)
+        {
+            themeDarkLightCSS = tempDarkLight;
+            updateState = true;
+        }
+        if (_themeId != themeState.ThemeId && themeState.ThemeId != 0)
+        {
+            _themeId = themeState.ThemeId;
+            updateState = true;
+        }
+        if (updateState)
+        {
+            StateHasChanged();
+        }
+    }
+
+    private void DarkModeChanged()
+    {
+        CssChanged();
+    }
+
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // make sure theme state is initialized
+            if (!themeState.IsInitialized)
+            {
+                await themeState.Initialize();
+            }
+            _themeId = themeState.ThemeId;
+            CssChanged();
+        }
+    }
+}
+<style>@themeDarkLightCSS</style>
+<style>@themeStaticCSS</style>

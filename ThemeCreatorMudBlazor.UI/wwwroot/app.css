@@ -1,0 +1,131 @@
+
+.palette-picker-icon {
+	width: 25px;
+	flex-grow: 0;
+	flex-shrink: 0;
+	float: right;
+}
+
+.period-dot .mud-progress-circular-svg {
+	transform: scale(0.5); /* Reduces size to 50% */
+	margin-top: 15px; /* Pushes it down by 15px */
+}
+
+.github-image {
+	margin-bottom: -5px;
+	margin-right: 5px;
+	margin-left: 20px;
+	position: relative;
+	height: 24px;
+	width: 24px;
+}
+
+.left-text {
+	flex-grow: 1;
+	margin-right: 8px;
+	text-align: left;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	float: left;
+}
+
+.period-dot {
+	transform: scale(0.5); /* Reduces size to 50% */
+	margin-top: 15px; /* Pushes it down by 15px */
+}
+
+.centered-input .mud-input-root {
+	text-align: center;
+}
+
+.icon-buttons-stack {
+	gap: 0px; /* Remove extra space between the buttons */
+	margin-right: -15px;
+	margin-top: 5px;
+}
+
+.save-expansion-panels .mud-expand-panel-header {
+	padding: 0px 25px 0px 15px;
+	font-size: var(--mud-typography-h6-size);
+	font-weight: var(--mud-typography-h6-weight);
+	line-height: var(--mud-typography-h6-lineheight);
+	letter-spacing: var(--mud-typography-h6-letterspacing);
+	background-color: var(--mud-palette-secondary);
+	color: var(--mud-palette-secondary-text);
+	border-radius: 14px;
+}
+
+.shadow-selector {
+	outline: none;
+	transition: all 0.2s ease-in-out;
+	border-radius: 4px;
+	position: relative; /* Add this to position the pseudo-element relative to this element */
+}
+
+	.shadow-selector:focus {
+		color: var(--mud-palette-tertiary-text);
+		background-color: transparent;
+		z-index: 1500;
+	}
+
+		.shadow-selector:focus::after {
+			content: '';			
+			background-color: var(--mud-palette-tertiary);
+			position: absolute;
+			top: 4px;
+			right: 22px;
+			bottom: 4px;
+			left: -4px;
+			border-radius: 5px; /* Slightly smaller radius for inner highlight */
+			box-shadow: 0 0 0 calc(var(--mud-space)) var(--mud-palette-tertiary);
+			pointer-events: none; /* Ensures the pseudo-element doesn't interfere with clicks */
+			z-index: -1;
+		}
+
+.rounded-popover {
+	background-color: transparent;
+	box-shadow: none;
+}
+
+.mud-drawer {
+	overflow: visible !important;
+}
+
+.codeblock {
+	position: relative;
+	background-color: var(--mud-palette-background-grey);
+	border-radius: var(--mud-default-borderradius);
+	margin: 0px 10px;
+	display: flex;
+	flex-direction: column;
+	overflow: auto; /* Enables scrolling when content exceeds max dimensions */
+}
+
+	.codeblock pre {
+		margin: 0;
+		padding: 16px;
+		padding-top: 0px;
+		overflow-x: auto;
+	}
+
+	.codeblock code {
+		font-family: 'Cascadia Code', Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+		font-size: 14px;
+		line-height: 1.5;
+		display: block;
+		padding-top: 5px;
+	}
+
+.codeblock-actions {
+	position: absolute; 
+	top: 14px; 
+	right: 12px; 
+	opacity: 0.7;
+	transition: opacity 0.2s;
+	z-index: 1;
+}
+
+.codeblock:hover .codeblock-actions {
+	opacity: 1;
+}

@@ -1,0 +1,78 @@
+﻿@page "/Style"
+@inject StyleService styleService
+
+<PageTitle>CSS Variable Style Lookup</PageTitle>
+
+<MudText Typo="Typo.h3">CSS Variable Style Lookup</MudText>
+<br />
+<MudTextField @ref="_searchField" Disabled="@cssDisabled" @bind-Value="cssVariable" Style="width: 300px;" Variant="Variant.Outlined" Immediate="true"
+              Placeholder="e.g. --mud-palette-primary" Label="Variable to Lookup" FullWidth="false" OnKeyDown="@KeyDown"
+              Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" OnAdornmentClick="@CssValueLookup" />
+<br />
+<MudTable T="ResponseItem" Items="responseList">
+    <ColGroup>
+        <col style="width: 30%; min-width: 50px;" />
+        <col />
+    </ColGroup>
+    <HeaderContent>
+        <MudTh>
+            Variable Searched
+        </MudTh>
+        <MudTh>
+            Response Received
+        </MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd>
+            @context.Variable
+        </MudTd>
+        <MudTd>
+            @context.Response
+        </MudTd>
+    </RowTemplate>
+</MudTable>
+
+@code {
+    private string cssVariable = string.Empty;
+    private bool cssDisabled = false;
+    private List<ResponseItem> responseList = [];
+    private MudTextField<string> _searchField = default!;
+
+    private async Task KeyDown(KeyboardEventArgs eventArgs)
+    {
+        if (eventArgs.Key.Equals("Enter"))
+        {
+            await CssValueLookup();
+            await _searchField.ResetAsync();
+            await _searchField.FocusAsync();
+        }
+    }
+
+    private async Task CssValueLookup()
+    {
+        if (string.IsNullOrWhiteSpace(cssVariable))
+        {
+            return;
+        }
+        cssDisabled = true;
+        StateHasChanged();
+        string response = string.Empty;
+        try
+        {
+            response = await styleService.GetComputedStylePropertyAsync(cssVariable) ?? "N/A";
+        } catch (Exception ex)
+        {
+            response = "Failure -- " + ex.Message;
+        }
+        if (string.IsNullOrWhiteSpace(response))
+        {
+            response = "Failure to locate variable.";
+        }
+        responseList.Insert(0, new ResponseItem(cssVariable, response));
+        cssDisabled = false;
+        await _searchField.ResetAsync();
+        await _searchField.FocusAsync();
+    }
+
+    public record ResponseItem(string Variable, string Response) { }
+}

@@ -1,0 +1,465 @@
+﻿@using MudBlazor.Utilities
+@inject IThemeCreatorService themeService
+@inject IThemeStateService themeState
+
+<MudTextField T="string" Value="@searchString" Immediate="true" ValueChanged="@SearchAllPanels"
+              Placeholder="Search by name" Variant="Variant.Outlined" Class="mx-2 my-2"
+              Typo="Typo.caption" Margin="Margin.Dense" Clearable DebounceInterval="150" />
+@if (IsLoading)
+{
+<MudOverlay Visible="true" LightBackground="true" AutoClose="false" Absolute="true">
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+</MudOverlay>
+}
+else
+{
+<MudExpansionPanels Elevation="3" MultiExpansion>
+    @foreach (ThemePalette palette in themePalettes)
+    {
+            <MudExpansionPanel Class="ma-0 pa-0" Text="@palette.Name" @bind-Expanded="@panelDictionary[$"p{palette.Id}"]">            
+                    <div class="pa-1 ma-0" style="max-height: 45vh; overflow-y: auto; overflow-x: hidden">
+                    @foreach (var themeSelection in themeSelections
+                   .Where(x => !shouldFilter || x.ThemeName.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+                   .OrderBy(x => x.OrderPriority)
+                   .ThenBy(x => x.Id))
+                        {
+                            <div class="mb-1">
+                            <ThemeCreatorColorItem @key="@(new Guid().ToString())" Name="@themeSelection.ThemeName" ToolTipText="@(ThemeSelectionTooltip(palette.Id))"
+                                                       ColorChanged="@(async (MudColor newCol) => await ThemeColorChanged(themeSelection.Id, newCol, palette.Id == 1))"
+                                                       DefaultColor="@(palette.Id == 1 ? themeSelection.LightValueHex : themeSelection.DarkValueHex)" />
+                            </div>
+                        }
+                    </div>
+            </MudExpansionPanel>
+    }    
+    @foreach (ThemeOption option in themeOptions.Where(x => x.Name != "Shadows").ToList())
+    {
+            <MudExpansionPanel Class="ma-0 pa-0" Text="@option.Name" @bind-Expanded="@panelDictionary[$"o{option.Id}"]">
+                    <div class="pa-0 ma-0" style="min-height: 10vh;max-height: 45vh;overflow-y: auto;overflow-x: hidden">
+                        <div class="pa-1 ma-0">
+                            @switch (option.Name)
+                            {
+                                @case "Shadows": <!-- Shadows isn't something that gets customized often, hiding it for now -->
+@*                                     <div @onkeydown:preventDefault="true">
+                                        <MudStack Class="pr-6 shadow-selector" Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween"
+                                                  tabindex="0" @onkeydown="HandleShadowKeyPress">
+                                            <MudText>@customShadows[currentShadowIndex].ToString()</MudText>
+                                            <MudStack Spacing="0" AlignItems="AlignItems.Center" Class="icon-buttons-stack">
+                                                <MudIconButton OnClick="@(() => ChangeShadowIndex(-1))"
+                                                               Disabled="@(currentShadowIndex == 0)"
+                                                               Icon="@Icons.Material.Filled.KeyboardArrowUp" Size="Size.Small" />
+                                                <MudIconButton OnClick="@(() => ChangeShadowIndex(1))"
+                                                               Disabled="@(currentShadowIndex == customShadows.Count - 1)"
+                                                               Icon="@Icons.Material.Filled.KeyboardArrowDown" Size="Size.Small" />
+                                            </MudStack>
+                                        </MudStack>
+                                    </div>
+                                    <MudTextField @bind-Value="@customShadows[currentShadowIndex].Default" Label="Shadow Value" /> *@
+                                    break;
+                                case "Layout Properties":
+                                @foreach (CustomLayoutProperty layoutProp in customLayouts
+                                    .Where(x => !shouldFilter || x.Name.Contains(searchString, StringComparison.OrdinalIgnoreCase)))
+                                    {
+                                        <ThemeCreatorLayoutItem LayoutProp="@layoutProp"
+                                                                LayoutPropChanged="@(async (int newSlider) => await LayoutPropertyChanged(layoutProp.Id, newSlider))" />
+                                    }
+                                    break;
+                                case "Typography":
+                                    <ThemeCreatorSpinner SpinnerIndex="_typoValue" SpinnerIndexChanged="async (int newVal) => await SpinnerIndexChanged(newVal)" SpinnerList="@typoList" />
+                                    @foreach (CustomTypography typo in customTypographies.Where(t => t.TypoType == typoList[_typoValue] && t.DataType != "String[]").ToList())
+                                    {
+                                        var typoIndex = typo.Id;
+                                        @switch (typo.DataType)
+                                        {
+                                            case "Int32":
+                                                <ThemeCreatorNumberItem T="int" Value="@(Convert.ToInt32(typo.Default))"
+                                                                        ValueChanged="@(async (int newVal) => await NumberItemChanged(typoIndex, newVal, "typo"))"
+                                                                        Min="100" Max="1000" Step="50" Name="@typo.Name" />
+                                                break;
+                                            case "Double":
+                                                <ThemeCreatorNumberItem T="double" Value="@(Convert.ToDouble(typo.Default))"
+                                                                        ValueChanged="@(async (double newVal) => await NumberItemChanged(typoIndex, newVal, "typo"))"
+                                                                        Min="0" Max="2" Step=".001" Name="@typo.Name" />
+                                                break;
+                                            case "String":
+                                                <ThemeCreatorTextItem Name="@typo.Name" Text="@typo.Default"
+                                                                      TextChanged="@(async (string newVal) => await TextItemChanged(typoIndex, newVal, "typo"))" />
+                                                break;
+                                            case "String[]": // skipped for now
+                                                <MudText Typo="Typo.body2" Class="palette-text">@typo.Name</MudText>
+                                                var stringArray = typo.Default.Split(' ').ToArray();
+                                                <MudSelect T="string" SelectedValues="@stringArray" MultiSelection="true" Placeholder="Select font(s)"
+                                                           Style="min-width: 200px;">
+                                                    @foreach (string f in GetAvailableFonts())
+                                                    {
+                                                        <MudSelectItem T="string" Value="@f">@f</MudSelectItem>
+                                                    }
+                                                </MudSelect>
+                                                break;
+                                            default:
+                                                <MudText Typo="Typo.body2" Class="palette-text">@typo.Name</MudText>
+                                                <MudText Typo="Typo.body2" Class="palette-text"><b>Unsupported DataType</b>: @typo.DataType</MudText>
+                                                break;
+                                        }
+                                    }
+
+                                    break;
+                                case "ZIndex":
+                                @foreach (CustomZIndex zIndex in customZIndexes.Where(x => !shouldFilter || x.Name.Contains(searchString, StringComparison.OrdinalIgnoreCase)))
+                                    {
+                                        <ThemeCreatorNumberItem T="int" Value="@(Convert.ToInt32(zIndex.Default))"
+                                                                ValueChanged="@(async (int newVal) => await NumberItemChanged(zIndex.Id, newVal, "zindex"))"
+                                                                Min="1000" Max="2000" Step="50" Name="@zIndex.Name" />
+                                    }
+                                    break;
+                                default:
+                                    break;
+                            }
+                        </div>
+                    </div>        
+        </MudExpansionPanel>
+    }
+</MudExpansionPanels>
+}
+@code {
+    [Parameter] public int ThemeId { get; set; }
+
+    private List<ThemeOption> themeOptions = [];
+    private List<ThemePalette> themePalettes = [];
+
+    private Dictionary<int, string> themeSelectionInfos = [];
+    private List<ThemeSelection> themeSelections = [];
+    private List<CustomShadow> customShadows = [];
+    private List<CustomLayoutProperty> customLayouts = [];
+    private List<CustomTypography> customTypographies = [];
+    private List<CustomZIndex> customZIndexes = [];
+    private List<string> typoList = [];
+    private List<string> selectedFonts = [];
+    private int _typoValue = 0;
+    private int currentShadowIndex = 0;
+    private int defaultThemeId = 1;
+    private string searchString = string.Empty;
+    public bool IsLoading = true;
+
+    private Dictionary<string, bool> panelDictionary = [];
+    private bool shouldFilter = false;
+
+    private string ThemeSelectionTooltip(int paletteId) => themeSelectionInfos.TryGetValue(paletteId, out string? val) ? val : string.Empty;
+
+    private List<string> GetAvailableFonts()
+    {
+        return [
+        "Arial", "Helvetica", "Times New Roman", "Times", "Courier New", "Courier",
+    "Verdana", "Georgia", "Palatino", "Garamond", "Bookman", "Comic Sans MS",
+    "Trebuchet MS", "Arial Black", "Impact"
+        ];
+    }
+
+    private void SearchAllPanels(string val)
+    {
+        searchString = val;
+        shouldFilter = !string.IsNullOrWhiteSpace(val) && val.Length >= 2;
+        var comparison = StringComparison.OrdinalIgnoreCase;
+
+        if (shouldFilter)
+        {
+            // Get matching theme selections for ThemePalettes
+            var matchingThemeSelections = themeSelections
+                .Where(t => t.ThemeName.Contains(val, comparison))
+                .Select(t => t.Id)
+                .ToHashSet();
+
+            // Get matching custom items for ThemeOptions
+            var matchingCustomItems = new Dictionary<int, bool>();
+            foreach (var option in themeOptions)
+            {
+                bool hasMatchingItems = option.Name switch
+                {
+                    "Shadows" => customShadows.Any(s => s.Name.Contains(val, comparison)),
+                    "Layout Properties" => customLayouts.Any(l => l.Name.Contains(val, comparison)),
+                    "Typography" => customTypographies.Any(t => t.Name.Contains(val, comparison)),
+                    "ZIndex" => customZIndexes.Any(z => z.Name.Contains(val, comparison)),
+                    _ => false
+                };
+                matchingCustomItems[option.Id] = hasMatchingItems;
+            }
+
+            // Update panel dictionary
+            panelDictionary = panelDictionary.ToDictionary(
+                kvp => kvp.Key,
+                kvp =>
+                {
+                    if (kvp.Key.StartsWith("p"))
+                    {
+                        // Handle ThemePalette panels
+                        int paletteId = int.Parse(kvp.Key[1..]);
+                        return matchingThemeSelections.Any(); // If any themes match, show palette
+                    }
+                    else if (kvp.Key.StartsWith("o"))
+                    {
+                        // Handle ThemeOption panels
+                        int optionId = int.Parse(kvp.Key[1..]);
+                        return matchingCustomItems.TryGetValue(optionId, out bool hasMatches) && hasMatches;
+                    }
+                    return false;
+                }
+            );
+        }
+        else if (string.IsNullOrWhiteSpace(val))
+        {
+            // Reset all panels to collapsed state except the first when search is cleared
+            panelDictionary = panelDictionary.ToDictionary(
+                kvp => kvp.Key,
+                kvp => kvp.Key == "p1" ? true : false
+            );
+        }
+        StateHasChanged();
+    }
+
+    protected async override Task OnInitializedAsync()
+    {
+        themeOptions = await themeService.GetActiveThemeOptionsAsync();
+        themePalettes = await themeService.GetThemePalettesAsync();
+        foreach (var option in themeOptions)
+        {
+            panelDictionary.Add($"o{option.Id}", false);
+        }
+        foreach (var palette in themePalettes)
+        {
+            panelDictionary.Add($"p{palette.Id}", palette.Id == 1);
+        }
+        themeSelectionInfos = ThemeCreatorMudBlazor.DAL.Data.SeedDescriptionData.SeedDescriptions();
+    }
+
+    #region Loading and Selecting Full Themes
+
+    private async Task LoadDefaultThemeValues()
+    {
+        themeSelections = await themeService.GetThemeSelectionsAsync(defaultThemeId);
+        await themeState.UpdateThemeData(themeSelections, false);
+        customShadows = await themeService.GetCustomShadowsAsync(defaultThemeId);
+        await themeState.UpdateThemeData(customShadows, false);
+        customLayouts = await themeService.GetCustomLayoutsAsync(defaultThemeId);
+        await themeState.UpdateThemeData(customLayouts, false);
+        customTypographies = await themeService.GetCustomTypographiesAsync(defaultThemeId);
+        await themeState.UpdateThemeData(customTypographies, false);
+        customZIndexes = await themeService.GetCustomZIndexesAsync(defaultThemeId);
+        await themeState.UpdateThemeData(customZIndexes, false);
+        typoList = customTypographies
+            .Select(t => t.TypoType)
+            .Distinct()
+            .ToList();
+    }
+
+    private async Task Loading(bool toLoad)
+    {
+        IsLoading = toLoad;
+        await InvokeAsync(StateHasChanged);
+        await Task.Delay(1);        
+    }
+
+    protected async override Task OnParametersSetAsync()
+    {
+        await Loading(true);
+        switch (ThemeId)
+        {
+            case -1:
+                LoadSavedThemeData(); // Last saved data
+                break;
+            case 0:
+                await ResetTheme(); // Theme Reset
+                break;
+            case 1:
+                await LoadDefaultThemeValues(); // Default Theme
+                break;
+            default:
+                await LoadTheme(ThemeId); // Load Selected Theme
+                LoadSavedThemeData();
+                break;
+        }
+        await Loading(false); 
+    }
+
+    private async Task LoadTheme(int themeId)
+    {
+        var newThemeSelections = await themeService.GetThemeSelectionsAsync(themeId);
+        await themeState.UpdateThemeData(newThemeSelections, false);
+        var newCustomShadows = await themeService.GetCustomShadowsAsync(themeId);
+        await themeState.UpdateThemeData(newCustomShadows, false);
+        var newCustomLayouts = await themeService.GetCustomLayoutsAsync(themeId);
+        await themeState.UpdateThemeData(newCustomLayouts, false);
+        var newCustomTypographies = await themeService.GetCustomTypographiesAsync(themeId);
+        await themeState.UpdateThemeData(newCustomTypographies, false);
+        var newCustomZIndexes = await themeService.GetCustomZIndexesAsync(themeId);
+        await themeState.UpdateThemeData(newCustomZIndexes, false);
+        await themeState.UpdateThemeId(themeId, false, true);
+        var ct = await themeService.GetCustomThemesAsync();
+        var theme = ct.FirstOrDefault(x => x.Id == themeId);
+        if (theme != null)
+        {
+            themeState.ThemeName = theme.Name;
+            themeState.ThemeOtherText = theme.OtherText;
+        }
+    }
+
+    private void LoadSavedThemeData()
+    {
+        if (themeState.SelectedThemes.Any())
+        {
+            UpdateThemeListValues(
+                themeSelections,
+                themeState.SelectedThemes,
+                keySelector: item => item.ThemeName,
+                updateAction: (original, updated) =>
+                {
+                    original.LightValue = updated.LightValue;
+                    original.DarkValue = updated.DarkValue;
+                }
+            );
+        }
+        if (themeState.SelectedLayouts.Any())
+        {
+            UpdateThemeListValues(
+                customLayouts,
+                themeState.SelectedLayouts,
+                keySelector: item => item.Name,
+                updateAction: (original, updated) =>
+                {
+                    original.Default = updated.Default;
+                }
+            );
+        }
+        if (themeState.SelectedTypographies.Any())
+        {
+            // custom linq statement to update the default value of the typography based on TypoType and Name
+            customTypographies = customTypographies
+                .GroupJoin(themeState.SelectedTypographies,
+                    original => new { original.TypoType, original.Name },
+                    second => new { second.TypoType, second.Name },
+                    (original, secondMatches) => new { original, secondMatch = secondMatches.FirstOrDefault() })
+                .Select(x =>
+                {
+                    if (x.secondMatch != null)
+                    {
+                        x.original.Default = x.secondMatch.Default;
+                    }
+                    return x.original;
+                }).ToList();
+        }
+        if (themeState.SelectedZIndexes.Any())
+        {
+            UpdateThemeListValues(
+                customZIndexes,
+                themeState.SelectedZIndexes,
+                keySelector: item => item.Name,
+                updateAction: (original, updated) =>
+                {
+                    original.Default = updated.Default;
+                }
+            );
+        }
+    }
+
+    public static void UpdateThemeListValues<T>(List<T> originalList, List<T> updatedList, Func<T, string> keySelector, Action<T, T> updateAction)
+    {
+        // generic linq statement to update the Func value of the theme class based on the keySelector
+        foreach (var original in originalList)
+        {
+            var key = keySelector(original);
+            var updatedItem = updatedList.FirstOrDefault(updated => keySelector(updated) == key);
+
+            if (updatedItem != null)
+            {
+                updateAction(original, updatedItem);
+            }
+        }
+    }
+
+
+    public async Task ResetTheme()
+    {
+        await LoadDefaultThemeValues();
+        await LoadTheme(ThemeId);
+        StateHasChanged();
+    }
+
+    #endregion
+
+    #region Setting values in theme state service
+    private async Task SpinnerIndexChanged(int newVal)
+    {
+        _typoValue = newVal;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ThemeColorChanged(int themeId, MudColor newColor, bool isLight)
+    {
+        var foundTheme = themeSelections.FirstOrDefault(x => x.Id == themeId);
+        ArgumentNullException.ThrowIfNull(foundTheme); // should never be null.
+        if (isLight)
+        {
+            foundTheme.LightValue = newColor.ToString();
+        }
+        else
+        {
+            foundTheme.DarkValue = newColor.ToString();
+        }
+        await themeState.UpdateThemeData(themeSelections, true, true);
+    }
+
+    private async Task TextItemChanged(int Id, string text, string typo)
+    {
+        if (typo == "typo")
+        {
+            var foundTypoItem = customTypographies.FirstOrDefault(x => x.Id == Id);
+            ArgumentNullException.ThrowIfNull(foundTypoItem); // should never be null.
+            foundTypoItem.Default = text;
+            await themeState.UpdateThemeData(customTypographies, true, true);
+        }
+    }
+
+    private async Task NumberItemChanged(int Id, double newVal, string typo)
+    {
+        if (typo == "typo")
+        {
+            var foundTypoItem = customTypographies.FirstOrDefault(x => x.Id == Id);
+            ArgumentNullException.ThrowIfNull(foundTypoItem); // should never be null.
+            foundTypoItem.Default = newVal.ToString();
+            await themeState.UpdateThemeData(customTypographies, true, true);
+        }
+        else if (typo == "zindex")
+        {
+            var foundZItem = customZIndexes.FirstOrDefault(x => x.Id == Id);
+            ArgumentNullException.ThrowIfNull(foundZItem); // should never be null.
+            foundZItem.Default = newVal.ToString();
+            await themeState.UpdateThemeData(customZIndexes, true, true);
+        }
+    }
+
+    private async Task LayoutPropertyChanged(int layoutId, int sliderValue)
+    {
+        var foundLayout = customLayouts.FirstOrDefault(x => x.Id == layoutId);
+        ArgumentNullException.ThrowIfNull(foundLayout); // should never be null.
+        foundLayout.Default = sliderValue;
+        await themeState.UpdateThemeData(customLayouts, true, true);
+    }
+
+    private void HandleShadowKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "ArrowUp" && currentShadowIndex > 0)
+        {
+            ChangeShadowIndex(-1);
+        }
+        else if (e.Key == "ArrowDown" && currentShadowIndex < customShadows.Count - 1)
+        {
+            ChangeShadowIndex(1);
+        }
+    }
+
+    private void ChangeShadowIndex(int delta)
+    {
+        currentShadowIndex = Math.Clamp(currentShadowIndex + delta, 0, customShadows.Count - 1);
+    }
+
+    #endregion
+}

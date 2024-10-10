@@ -1,0 +1,9 @@
+﻿
+
+    <MudSlider Step="@GetStep()" Min="@LayoutProp.Min" Max="LayoutProp.Max" T="int" TickMarks
+        Value="@LayoutProp.Default" ValueChanged="@OnLayoutPropertyChanged" 
+        Class="mt-3">
+        <MudText Typo="Typo.body2">
+            @LayoutProp.Name: <b>@($"{@LayoutProp.Default}px")</b>
+        </MudText>
+    </MudSlider>    

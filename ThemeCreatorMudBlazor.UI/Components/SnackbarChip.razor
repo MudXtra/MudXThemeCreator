@@ -1,0 +1,66 @@
+﻿@using MudBlazor.Utilities
+
+<MudIconButton Icon="@IconToShow"
+               Size="Size.Small"
+               OnClick="HandleClick" />  
+<MudPopover Open="@_isOpen" Elevation="25" AnchorOrigin="Origin.CenterLeft" TransformOrigin="Origin.CenterRight"
+            OverflowBehavior="OverflowBehavior.FlipAlways" Class="rounded-popover">
+    <MudChip T="string" Color="@color" Size="Size.Small">
+        @Message
+    </MudChip>
+</MudPopover>
+
+@code {
+    [Parameter]
+    public string Message { get; set; } = string.Empty;
+    [Parameter]
+    public Severity Severity { get; set; } = Severity.Info;
+    [Parameter]
+    public EventCallback OnClick { get; set; }
+    [Parameter]
+    public int Duration { get; set; } = 2500;
+    [Parameter]
+    public string IconToShow { get; set; } = Icons.Material.Filled.ContentCopy;
+
+    private Color color = Color.Default;
+    private Timer? Timer { get; set; }
+    private bool _isOpen = false;
+
+    protected override void OnInitialized()
+    {
+        Timer = new Timer(TimerElapsed, null, Timeout.Infinite, Timeout.Infinite);
+        color = Severity switch
+        {
+            Severity.Info => Color.Info,
+            Severity.Success => Color.Success,
+            Severity.Warning => Color.Warning,
+            Severity.Error => Color.Error,
+            _ => Color.Default
+        };
+    }
+
+    private async Task HandleClick()
+    {
+        _isOpen = true;
+        await OnClick.InvokeAsync();
+    }
+
+    protected override void OnParametersSet()
+    {
+        Timer?.Change(Duration, Timeout.Infinite);
+    }
+
+    public void Dispose()  
+    {
+        Timer?.Dispose();
+    }
+
+    private void TimerElapsed(object? _)
+    {
+        InvokeAsync(() => 
+        {
+        _isOpen = false;
+        StateHasChanged();
+        });
+    }
+}

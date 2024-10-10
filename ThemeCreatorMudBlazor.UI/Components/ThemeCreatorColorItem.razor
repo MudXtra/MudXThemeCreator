@@ -1,0 +1,56 @@
+﻿
+<MudOverlay @bind-Visible="_isOpen" AutoClose="true" />
+<div class="mud-list-item-clickable mud-ripple pr-4 py-3" @onclick="ToggleOpen" data-tooltip="@ToolTipText">
+    <MudStack Row AlignItems="AlignItems.Center" Class="pl-0 ml-0"> <!-- TODO Link tooltip somehow -->
+            <MudText Typo="Typo.body2" Class="left-text">@Name</MudText>
+            <MudIcon Class="palette-picker-icon" Icon="@Icons.Material.Filled.Palette" Style="@($"color: {DefaultColor}")" Size="Size.Small" />
+    </MudStack>
+</div>
+<!-- Tryblazor version: https://try.mudblazor.com/snippet/wkGybuaSrnvujsOP -->
+<MudPopover @ref="popoverRef" Open="@_isOpen" Elevation="25" AnchorOrigin="Origin.CenterRight" Class="palette-picker-popover"
+            TransformOrigin="Origin.BottomLeft" OverflowBehavior="OverflowBehavior.FlipOnOpen">
+    @if (_hasBeenOpened)
+    {
+        <MudCard Elevation="2">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudStack Class="ma-0 pa-0 mt-n1 mb-1 mr-n1" Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                        <MudText Style="max-width: 190px;" Class="left-text" Typo="Typo.h6">Edit @Name</MudText>
+                        <MudStack Row Spacing="0" Justify="Justify.FlexEnd">
+                            <MudTooltip Text="Copy Color to Clipboard">
+                                <SnackbarChip IconToShow="@Icons.Material.Filled.ContentCopy" OnClick="@CopyColor"
+                                              Message="@messageToShow" Severity="@messageSeverity" />
+                            </MudTooltip>
+                            <MudTooltip Text="Paste Color from Clipboard">
+                                <SnackbarChip IconToShow="@Icons.Material.Filled.ContentPaste" OnClick="@PasteColor"
+                                              Message="@messageToShow" Severity="@messageSeverity" />
+                            </MudTooltip>
+                            <MudTooltip Text="Revert to original color">
+                                <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.Cancel" OnClick="@CancelOpen" />
+                            </MudTooltip>
+                            <MudTooltip Text="Save Changes">
+                                <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.Save" OnClick="@ToggleOpen" />
+                            </MudTooltip>
+                        </MudStack>
+                    </MudStack>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <div style="display: flex; justify-content: flex-end; width: 100%; margin-bottom: 8px;margin-top: -30px;">
+                    <MudSpacer />
+                    <MudButton Color="@sampleColor" Disabled="@sampleDisabled" hidden="@(sampleHidden)" Variant="Variant.Filled">@sampleText</MudButton>
+                    <MudSpacer />
+                    <MudButtonGroup OverrideStyles="false" Variant="Variant.Outlined">
+                        <MudIconButton Size="Size.Small" Variant="_view == ColorPickerView.Spectrum ? Variant.Outlined : Variant.Filled"
+                                       Icon="@Icons.Material.Filled.Tune" OnClick="@(() => _view = ColorPickerView.Spectrum)" />
+                        <MudIconButton Size="Size.Small" Variant="_view == ColorPickerView.Grid ? Variant.Outlined : Variant.Filled"
+                                       Icon="@Icons.Material.Filled.Apps" OnClick="@(() => _view = ColorPickerView.Grid)" />
+                        <MudIconButton Size="Size.Small" Variant="_view == ColorPickerView.Palette ? Variant.Outlined : Variant.Filled"
+                                       Icon="@Icons.Material.Filled.Palette" OnClick="@(() => _view = ColorPickerView.Palette)" />
+                    </MudButtonGroup>
+                </div>
+                <MudColorPicker Class="py-0 my-0" ShowToolbar="false" ColorPickerView="@_view" Value="@ThemeColor" PickerVariant="PickerVariant.Static" Elevation="0" ValueChanged="UpdateColor" />
+            </MudCardContent>
+        </MudCard>
+    }
+</MudPopover>
