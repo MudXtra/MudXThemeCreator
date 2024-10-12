@@ -39,13 +39,18 @@ builder.Host.UseSerilog((context, services, configuration) => configuration
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-builder.Services.AddMudServicesWithExtensions(config =>
+void configMud(MudServicesConfiguration configMud)
 {
-    config.SnackbarConfiguration.PositionClass = MudBlazor.Defaults.Classes.Position.TopRight;
-    config.SnackbarConfiguration.VisibleStateDuration = 5000; // show toasts for 5 seconds by default
-    config.SnackbarConfiguration.PreventDuplicates = false;
-    config.SnackbarConfiguration.HideTransitionDuration = 0;
-});
+    configMud.SnackbarConfiguration.PositionClass = MudBlazor.Defaults.Classes.Position.TopRight;
+    configMud.SnackbarConfiguration.VisibleStateDuration = 5000; // show toasts for 5 seconds by default
+    configMud.SnackbarConfiguration.PreventDuplicates = false;
+    configMud.SnackbarConfiguration.HideTransitionDuration = 0;
+}
+void configMudEx(MudExConfiguration configMudEx)
+{
+    configMudEx.WithoutAutomaticCssLoading();
+}
+builder.Services.AddMudServicesWithExtensions(configMud, configMudEx);
 
 //var connectionString = configuration.GetConnectionString("DefaultConnection") ??
 //					   throw new NullReferenceException("No Connecting String Found");
