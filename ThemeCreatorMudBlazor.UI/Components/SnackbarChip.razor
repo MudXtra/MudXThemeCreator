@@ -1,6 +1,8 @@
 ﻿@using MudBlazor.Utilities
 
 <MudIconButton Icon="@IconToShow"
+               Color="@Color"
+               Style="@Style"
                Size="Size.Small"
                OnClick="HandleClick" />  
 <MudPopover Open="@_isOpen" Elevation="25" AnchorOrigin="Origin.CenterLeft" TransformOrigin="Origin.CenterRight"
@@ -18,9 +20,13 @@
     [Parameter]
     public EventCallback OnClick { get; set; }
     [Parameter]
-    public int Duration { get; set; } = 2500;
+    public int Duration { get; set; } = 1500;
     [Parameter]
     public string IconToShow { get; set; } = Icons.Material.Filled.ContentCopy;
+    [Parameter] 
+    public Color Color { get; set; } = Color.Inherit;
+    [Parameter]
+    public string Style { get; set; } = string.Empty;
 
     private Color color = Color.Default;
     private Timer? Timer { get; set; }
