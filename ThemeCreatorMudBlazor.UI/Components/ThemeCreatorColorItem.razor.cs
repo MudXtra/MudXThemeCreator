@@ -2,15 +2,22 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor;
+using MudBlazor.Extensions;
+using MudBlazor.Extensions.Core;
+using MudBlazor.Extensions.Options;
 using MudBlazor.Utilities;
+using Nextended.Core.Extensions;
+using ThemeCreatorMudBlazor.DAL.Services;
 
 namespace ThemeCreatorMudBlazor.UI.Components
 {
     public partial class ThemeCreatorColorItem : ComponentBase, IDisposable
     {
         private bool _isOpen;
-        private bool _hasBeenOpened;
         private ColorPickerView _view = ColorPickerView.Spectrum;
+        private readonly DialogOptionsEx _dialogOptions = new()
+        { CloseOnEscapeKey=true, BackdropClick=true, Position=DialogPosition.Center, 
+              CloseButton=false, Animations = [AnimationType.Pulse], DragMode= MudDialogDragMode.WithoutBounds };
 
         [Parameter]
         public string? Name { get; set; }
@@ -23,23 +30,33 @@ namespace ThemeCreatorMudBlazor.UI.Components
         public EventCallback<MudColor> ColorChanged { get; set; }
         [Inject]
         public IJSRuntime JsRuntime { get; set; } = default!;
+        [Inject]
+        public StyleService StyleService { get; set; } = default!;
 
         public MudColor ThemeColor { get; set; } = new MudColor();
         private readonly System.Timers.Timer debounceTimer = new(150);
         private MudColor? lastColor;
-        private MudColor firstOpenedColor = new MudColor();
-        private MudPopover? popoverRef;
-        private Color sampleColor = Color.Default;
-        private string sampleText = string.Empty;
-        private bool sampleDisabled = false;
-        private bool sampleHidden = false;
+        private MudColor firstOpenedColor = new();
 
         private string messageToShow = string.Empty;
         private Severity messageSeverity = Severity.Info;
+        private string initialPrimary = string.Empty;
+        private string initialSecondary = string.Empty;
+        private string initialTertiary = string.Empty;
         protected override void OnInitialized()
         {
             debounceTimer.Elapsed += OnDebounceElapsed;
             debounceTimer.AutoReset = false;
+        }
+
+        protected async override Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (firstRender)
+            {
+                initialPrimary = await StyleService.GetComputedStylePropertyAsync("--mud-palette-primary");
+                initialSecondary = await StyleService.GetComputedStylePropertyAsync("--mud-palette-secondary");
+                initialTertiary = await StyleService.GetComputedStylePropertyAsync("--mud-palette-tertiary");
+            }
         }
 
         private async Task CopyColor()
@@ -53,6 +70,38 @@ namespace ThemeCreatorMudBlazor.UI.Components
             {
                 ShowNotification("Failed to copy color to clipboard", Severity.Error);
             }
+        }
+
+        private void CopyFrom(string colorType)
+        {
+            string colorValue = colorType switch
+            {
+                "primary" => initialPrimary,
+                "secondary" => initialSecondary,
+                "tertiary" => initialTertiary,
+                _ => string.Empty
+            };
+
+            bool result = false;
+            MudColor mudColor = new();
+            try
+            {
+                mudColor = new MudColor(colorValue);
+                result = true;
+            } catch 
+            { 
+                ShowNotification("Failed paste from " + StringExtensions.ToUpper(colorType, true), Severity.Warning); 
+            }
+
+            if (result)
+            {
+                ThemeColor = mudColor;
+                lastColor = mudColor;
+                debounceTimer?.Stop();
+                debounceTimer?.Start();
+                ShowNotification("Color pasted from " + StringExtensions.ToUpper(colorType, true), Severity.Info);
+                StateHasChanged();
+            }            
         }
 
         private async Task PasteColor()
@@ -99,8 +148,6 @@ namespace ThemeCreatorMudBlazor.UI.Components
             GC.SuppressFinalize(this);
         }
 
-        protected override bool ShouldRender() => !_isOpen || _hasBeenOpened;
-
         protected override void OnParametersSet()
         {
             if (DefaultColor == null)
@@ -111,62 +158,7 @@ namespace ThemeCreatorMudBlazor.UI.Components
                 ThemeColor = mudColor;
             }
             catch { }
-            if (Name == null)
-                Name = string.Empty;
-            switch (Name)
-            {
-                case var s when s.Contains("primary", StringComparison.OrdinalIgnoreCase):
-                    sampleColor = Color.Primary;
-                    sampleText = "Primary";
-                    break;
-                case var s when s.Contains("secondary", StringComparison.OrdinalIgnoreCase):
-                    sampleColor = Color.Secondary;
-                    sampleText = "Secondary";
-                    break;
-                case var s when s.Contains("tertiary", StringComparison.OrdinalIgnoreCase):
-                    sampleColor = Color.Tertiary;
-                    sampleText = "Tertiary";
-                    break;
-                case var s when s.Contains("info", StringComparison.OrdinalIgnoreCase):
-                    sampleColor = Color.Info;
-                    sampleText = "Info";
-                    break;
-                case var s when s.Contains("success", StringComparison.OrdinalIgnoreCase):
-                    sampleColor = Color.Success;
-                    sampleText = "Success";
-                    break;
-                case var s when s.Contains("warning", StringComparison.OrdinalIgnoreCase):
-                    sampleColor = Color.Warning;
-                    sampleText = "Warning";
-                    break;
-                case var s when s.Contains("error", StringComparison.OrdinalIgnoreCase):
-                    sampleColor = Color.Error;
-                    sampleText = "Error";
-                    break;
-                case var s when s.Contains("dark", StringComparison.OrdinalIgnoreCase):
-                    sampleColor = Color.Dark;
-                    sampleText = "Dark";
-                    break;
-                case var s when s.Contains("disabled", StringComparison.OrdinalIgnoreCase):
-                    sampleDisabled = true;
-                    sampleText = "Disabled";
-                    break;
-                case var s when s.Contains("surface", StringComparison.OrdinalIgnoreCase):
-                    sampleColor = Color.Surface;
-                    sampleText = "Surface";
-                    break;
-                case var s when s.Contains("hover", StringComparison.OrdinalIgnoreCase):
-                    sampleColor = Color.Default;
-                    sampleText = "Hover";
-                    break;
-                case var s when s.Contains("ripple", StringComparison.OrdinalIgnoreCase):
-                    sampleColor = Color.Default;
-                    sampleText = "Ripple";
-                    break;
-                default:
-                    sampleHidden = true;
-                    break;
-            }
+            Name ??= string.Empty;
         }
 
         private async void OnDebounceElapsed(object? sender, ElapsedEventArgs e)
@@ -181,10 +173,6 @@ namespace ThemeCreatorMudBlazor.UI.Components
         public void ToggleOpen()
         {
             _isOpen = !_isOpen;
-            if (_isOpen && !_hasBeenOpened)
-            {
-                _hasBeenOpened = true;
-            }
             if (_isOpen && DefaultColor != null)
             {
                 firstOpenedColor = new MudColor(DefaultColor);
