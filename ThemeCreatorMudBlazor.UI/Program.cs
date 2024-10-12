@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using MudBlazor.Extensions;
+using MudBlazor.Extensions.Options;
 using MudBlazor.Services;
 using Serilog;
 using Serilog.Events;
@@ -37,7 +39,7 @@ builder.Host.UseSerilog((context, services, configuration) => configuration
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-builder.Services.AddMudServices(config =>
+builder.Services.AddMudServicesWithExtensions(config =>
 {
     config.SnackbarConfiguration.PositionClass = MudBlazor.Defaults.Classes.Position.TopRight;
     config.SnackbarConfiguration.VisibleStateDuration = 5000; // show toasts for 5 seconds by default
@@ -76,6 +78,8 @@ if (!app.Environment.IsDevelopment())
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
+
+app.UseMudExtensions();
 
 app.UseHttpsRedirection();
 
