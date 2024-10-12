@@ -15,12 +15,10 @@
             <MudText Style="max-width: 190px; user-select: none;" Class="left-text" Typo="Typo.h6">Edit @Name</MudText>
             <MudStack Row Spacing="0" Justify="Justify.FlexEnd">
                 <MudTooltip Text="Copy Color to Clipboard">
-                    <SnackbarChip IconToShow="@Icons.Material.Filled.ContentCopy" OnClick="@CopyColor"
-                                  Message="@messageToShow" Severity="@messageSeverity" />
+                    <SnackbarChip @ref="copyColorSnackbarChip" IconToShow="@Icons.Material.Filled.ContentCopy" OnClick="@CopyColor" />
                 </MudTooltip>
                 <MudTooltip Text="Paste Color from Clipboard">
-                    <SnackbarChip IconToShow="@Icons.Material.Filled.ContentPaste" OnClick="@PasteColor"
-                                  Message="@messageToShow" Severity="@messageSeverity" />
+                    <SnackbarChip @ref="pasteColorSnackbarChip" IconToShow="@Icons.Material.Filled.ContentPaste" OnClick="@PasteColor" />
                 </MudTooltip>
                 <MudTooltip Text="Revert to original color">
                     <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.Cancel" OnClick="@CancelOpen" />
@@ -35,19 +33,16 @@
         <div style="display: flex; justify-content: flex-end; width: 100%; margin-bottom: 8px;margin-top: 0px;">
             <MudSpacer />
             <MudTooltip Text="Copy From Primary Color">
-                <SnackbarChip IconToShow="@Icons.Material.Filled.Palette" OnClick="@(() => CopyFrom("primary"))"
-                              Color="Color.Primary" Style="@($"color: {initialPrimary}")"
-                              Message="@messageToShow" Severity="@messageSeverity" />
+                <SnackbarChip @ref="primaryColorSnackbarChip" IconToShow="@Icons.Material.Filled.Palette" OnClick="@(() => CopyFrom("primary"))"
+                              Color="Color.Primary" Style="@($"color: {initialPrimary}")"  />
             </MudTooltip>
             <MudTooltip Text="Copy From Secondary Color">
-                <SnackbarChip IconToShow="@Icons.Material.Filled.Palette" OnClick="@(() => CopyFrom("secondary"))"
-                              Color="Color.Secondary" Style="@($"color: {initialSecondary}")"
-                              Message="@messageToShow" Severity="@messageSeverity" />
+                <SnackbarChip @ref="secondaryColorSnackbarChip" IconToShow="@Icons.Material.Filled.Palette" OnClick="@(() => CopyFrom("secondary"))"
+                              Color="Color.Secondary" Style="@($"color: {initialSecondary}")"  />
             </MudTooltip>
             <MudTooltip Text="Copy From Tertiary Color">
-                <SnackbarChip IconToShow="@Icons.Material.Filled.Palette" OnClick="@(() => CopyFrom("tertiary"))"
-                              Color="Color.Tertiary" Style="@($"color: {initialTertiary}")"
-                              Message="@messageToShow" Severity="@messageSeverity" />
+                <SnackbarChip @ref="tertiaryColorSnackbarChip" IconToShow="@Icons.Material.Filled.Palette" OnClick="@(() => CopyFrom("tertiary"))"
+                              Color="Color.Tertiary" Style="@($"color: {initialTertiary}")"  />
             </MudTooltip>
             <MudSpacer />
             <MudButtonGroup OverrideStyles="false" Variant="Variant.Outlined">

@@ -13,9 +13,7 @@
 </MudPopover>
 
 @code {
-    [Parameter]
     public string Message { get; set; } = string.Empty;
-    [Parameter]
     public Severity Severity { get; set; } = Severity.Info;
     [Parameter]
     public EventCallback OnClick { get; set; }
@@ -51,8 +49,10 @@
         await OnClick.InvokeAsync();
     }
 
-    protected override void OnParametersSet()
+    public void ShowSnackbarChip(string message, Severity severity)
     {
+        Message = message;
+        Severity = severity;
         Timer?.Change(Duration, Timeout.Infinite);
     }
 
@@ -65,8 +65,9 @@
     {
         InvokeAsync(() => 
         {
-        _isOpen = false;
-        StateHasChanged();
+            _isOpen = false;
+            Message = string.Empty;
+            StateHasChanged();
         });
     }
 }

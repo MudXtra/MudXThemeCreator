@@ -6,8 +6,7 @@
     <div class="codeblock-actions">
         @if (CopyToClipboardEnabled)
         {
-            <SnackbarChip Message="@_notificationMessage" Severity="@_notificationSeverity"
-                          OnClick="@CopyToClipboard" />
+            <SnackbarChip @ref="copySnackBarChip" OnClick="@CopyToClipboard" />
         }
     </div>
     <pre>
@@ -32,8 +31,7 @@
     public string MaxWidth { get; set; } = "100%"; // Default max-width
 
     private string GetLanguageClass() => $"language-{Language.ToLower()}";
-    private string _notificationMessage = string.Empty;
-    private Severity _notificationSeverity = Severity.Info;
+    private SnackbarChip copySnackBarChip = default!;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -56,7 +54,6 @@
 
     private void ShowNotification(string message, Severity severity)
     {
-        _notificationMessage = message;
-        _notificationSeverity = severity;
+        copySnackBarChip.ShowSnackbarChip(message, severity);
     }
 }

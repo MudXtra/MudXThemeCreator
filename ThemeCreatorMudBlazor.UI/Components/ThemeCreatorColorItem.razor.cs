@@ -38,8 +38,11 @@ namespace ThemeCreatorMudBlazor.UI.Components
         private MudColor? lastColor;
         private MudColor firstOpenedColor = new();
 
-        private string messageToShow = string.Empty;
-        private Severity messageSeverity = Severity.Info;
+        private SnackbarChip primaryColorSnackbarChip = default!;
+        private SnackbarChip secondaryColorSnackbarChip = default!;
+        private SnackbarChip tertiaryColorSnackbarChip = default!;
+        private SnackbarChip copyColorSnackbarChip = default!;
+        private SnackbarChip pasteColorSnackbarChip = default!;
         private string initialPrimary = string.Empty;
         private string initialSecondary = string.Empty;
         private string initialTertiary = string.Empty;
@@ -64,11 +67,11 @@ namespace ThemeCreatorMudBlazor.UI.Components
             try
             {
                 await JsRuntime.InvokeVoidAsync("navigator.clipboard.writeText", ThemeColor.ToString());
-                ShowNotification("Color copied to clipboard", Severity.Info);
+                ShowNotification("Color copied to clipboard", Severity.Info, copyColorSnackbarChip);
             }
             catch
             {
-                ShowNotification("Failed to copy color to clipboard", Severity.Error);
+                ShowNotification("Failed to copy color to clipboard", Severity.Error, copyColorSnackbarChip);
             }
         }
 
@@ -81,7 +84,13 @@ namespace ThemeCreatorMudBlazor.UI.Components
                 "tertiary" => initialTertiary,
                 _ => string.Empty
             };
-
+            SnackbarChip chip = colorType switch
+            {
+                "primary" => primaryColorSnackbarChip,
+                "secondary" => secondaryColorSnackbarChip,
+                "tertiary" => tertiaryColorSnackbarChip,
+                _ => default!
+            };
             bool result = false;
             MudColor mudColor = new();
             try
@@ -90,7 +99,7 @@ namespace ThemeCreatorMudBlazor.UI.Components
                 result = true;
             } catch 
             { 
-                ShowNotification("Failed paste from " + StringExtensions.ToUpper(colorType, true), Severity.Warning); 
+                ShowNotification("Failed paste from " + StringExtensions.ToUpper(colorType, true), Severity.Warning, chip); 
             }
 
             if (result)
@@ -99,7 +108,7 @@ namespace ThemeCreatorMudBlazor.UI.Components
                 lastColor = mudColor;
                 debounceTimer?.Stop();
                 debounceTimer?.Start();
-                ShowNotification("Color pasted from " + StringExtensions.ToUpper(colorType, true), Severity.Info);
+                ShowNotification("Color pasted from " + StringExtensions.ToUpper(colorType, true), Severity.Info, chip);
                 StateHasChanged();
             }            
         }
@@ -117,20 +126,19 @@ namespace ThemeCreatorMudBlazor.UI.Components
                     lastColor = mudColor;
                     debounceTimer?.Stop();
                     debounceTimer?.Start();
-                    ShowNotification("Color pasted from clipboard", Severity.Info);
+                    ShowNotification("Color pasted from clipboard", Severity.Info, pasteColorSnackbarChip);
                 }
                 catch
                 {
-                    ShowNotification("Failed to paste color from clipboard", Severity.Error);
+                    ShowNotification("Failed to paste color from clipboard", Severity.Error, pasteColorSnackbarChip);
                 }
             }
 
         }
 
-        private void ShowNotification(string message, Severity severity)
+        private void ShowNotification(string message, Severity severity, SnackbarChip chip)
         {
-            messageToShow = message;
-            messageSeverity = severity;
+            chip.ShowSnackbarChip(message, severity);
         }
 
         protected virtual void Dispose(bool disposing)
