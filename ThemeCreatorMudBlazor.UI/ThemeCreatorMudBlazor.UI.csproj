@@ -15,8 +15,8 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
-    <PackageReference Include="MudBlazor" Version="7.10.0" />
-    <PackageReference Include="MudBlazor.Extensions" Version="2.0.5" />
+    <PackageReference Include="MudBlazor" Version="7.11.0" />
+    <PackageReference Include="MudBlazor.Extensions" Version="2.0.6" />
     <PackageReference Include="System.Text.Encodings.Web" Version="8.0.0" />
   </ItemGroup>
 
