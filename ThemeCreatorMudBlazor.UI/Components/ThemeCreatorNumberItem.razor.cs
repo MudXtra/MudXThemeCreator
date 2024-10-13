@@ -23,7 +23,7 @@ namespace ThemeCreatorMudBlazor.UI.Components
         [Parameter]
         public T Step { get; set; }
 
-        protected override void OnInitialized()
+        protected override void OnParametersSet()
         {
             origValue = Value;
         }

@@ -79,7 +79,7 @@ else
                                             case "Double":
                                                 <ThemeCreatorNumberItem T="double" Value="@(Convert.ToDouble(typo.Default))"
                                                                         ValueChanged="@(async (double newVal) => await NumberItemChanged(typoIndex, newVal, "typo"))"
-                                                                        Min="0" Max="2" Step=".001" Name="@typo.Name" />
+                                                                        Min="0" Max="2" Step=".1" Name="@typo.Name" />
                                                 break;
                                             case "String":
                                                 <ThemeCreatorTextItem Name="@typo.Name" Text="@typo.Default"
