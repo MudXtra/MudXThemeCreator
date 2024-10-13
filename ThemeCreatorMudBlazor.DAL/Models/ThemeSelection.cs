@@ -16,7 +16,7 @@ namespace ThemeCreatorMudBlazor.DAL.Models
         [StringLength(25)] public string? LightValue { get; set; }
         [StringLength(25)] public string? DarkValue { get; set; }
         [Required, StringLength(25)] public string? CssVariable { get; set; } = default!;
-        public string LightValueHex => ColorConverter.ToHex(LightValue ?? string.Empty);
-        public string DarkValueHex => ColorConverter.ToHex(DarkValue ?? LightValue ?? string.Empty);
+        public string LightValueHex => ColorConverter.ToHexOrRgba(LightValue ?? string.Empty);
+        public string DarkValueHex => ColorConverter.ToHexOrRgba(DarkValue ?? LightValue ?? string.Empty);
     }
 }

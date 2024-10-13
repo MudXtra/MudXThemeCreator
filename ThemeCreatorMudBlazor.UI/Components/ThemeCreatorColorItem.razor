@@ -13,7 +13,7 @@
     <TitleContent>
         <MudStack Class="ma-0 pa-0 mt-n1 mb-1 mr-n1" Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
             <MudText Style="max-width: 190px; user-select: none;" Class="left-text" Typo="Typo.h6">Edit @Name</MudText>
-            <MudStack Row Spacing="1" Justify="Justify.FlexEnd">                
+            <MudStack Row Spacing="1" Justify="Justify.FlexEnd">
                 <MudTooltip Text="Copy Color to Clipboard">
                     <SnackbarChip @ref="copyColorSnackbarChip" IconToShow="@Icons.Material.Filled.ContentCopy" OnClick="@CopyColor" />
                 </MudTooltip>
@@ -35,15 +35,15 @@
             <MudSpacer />
             <MudTooltip Text="Copy From Primary Color">
                 <SnackbarChip @ref="primaryColorSnackbarChip" IconToShow="@Icons.Material.Filled.Palette" OnClick="@(() => CopyFrom("primary"))"
-                              Color="Color.Primary" Style="@($"color: {initialPrimary}")"  />
+                              Color="Color.Primary" Style="@($"color: {initialPrimary} !important;")"  />
             </MudTooltip>
             <MudTooltip Text="Copy From Secondary Color">
                 <SnackbarChip @ref="secondaryColorSnackbarChip" IconToShow="@Icons.Material.Filled.Palette" OnClick="@(() => CopyFrom("secondary"))"
-                              Color="Color.Secondary" Style="@($"color: {initialSecondary}")"  />
+                              Color="Color.Secondary" Style="@($"color: {initialSecondary} !important;")" />
             </MudTooltip>
             <MudTooltip Text="Copy From Tertiary Color">
                 <SnackbarChip @ref="tertiaryColorSnackbarChip" IconToShow="@Icons.Material.Filled.Palette" OnClick="@(() => CopyFrom("tertiary"))"
-                              Color="Color.Tertiary" Style="@($"color: {initialTertiary}")"  />
+                              Color="Color.Tertiary" Style="@($"color: {initialTertiary} !important;")" />
             </MudTooltip>
             <MudSpacer />
             <MudButtonGroup OverrideStyles="false" Variant="Variant.Outlined">
