@@ -25,7 +25,7 @@ else
                         {
                             <div class="mb-1">
                             <ThemeCreatorColorItem @key="@(new Guid().ToString())" Name="@themeSelection.ThemeName" ToolTipText="@(ThemeSelectionTooltip(palette.Id))"
-                                                       ColorChanged="@(async (MudColor newCol) => await ThemeColorChanged(themeSelection.Id, newCol, palette.Id == 1))"
+                                                       ColorChanged="@(async (MudColor newCol) => await ThemeColorChanged(themeSelection.Id, newCol, palette.Id))"
                                                        DefaultColor="@(palette.Id == 1 ? themeSelection.LightValueHex : themeSelection.DarkValueHex)" />
                             </div>
                         }
@@ -392,8 +392,9 @@ else
         await InvokeAsync(StateHasChanged);
     }
 
-    private async Task ThemeColorChanged(int themeId, MudColor newColor, bool isLight)
+    private async Task ThemeColorChanged(int themeId, MudColor newColor, int paletteId)
     {
+        bool isLight = paletteId == 1;
         var foundTheme = themeSelections.FirstOrDefault(x => x.Id == themeId);
         ArgumentNullException.ThrowIfNull(foundTheme); // should never be null.
         if (isLight)

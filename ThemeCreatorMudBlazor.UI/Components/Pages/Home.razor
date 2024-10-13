@@ -4,65 +4,59 @@
 
 @if (_cssTableSwitch)
 {
-<style>
-.mud-table-toolbar {
-    background-color: var(--mud-palette-drawer-background) !important;
-    color: var(--mud-palette-drawer-text) !important;
-}
-</style>
+    <style>
+        .mud-table-toolbar {
+            background-color: var(--mud-palette-drawer-background) !important;
+            color: var(--mud-palette-drawer-text) !important;
+        }
+    </style>
 }
 <MudPaper Class="pa-4 d-flex justify-space-around flex-wrap" MinHeight="100px" Height="100%">
-<MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceAround">
-            
-            <MudAvatar Color="Color.Default" Class="my-auto">M</MudAvatar>
-            <MudAvatar Color="Color.Primary" Class="my-auto">U</MudAvatar>
-            <MudAvatar Color="Color.Secondary" Class="my-auto">D</MudAvatar>
-            <MudAvatar Color="Color.Tertiary" Class="my-auto">B</MudAvatar>
-            <MudAvatar Color="Color.Info" Class="my-auto">L</MudAvatar>
-            <MudAvatar Color="Color.Success" Class="my-auto">A</MudAvatar>
-            <MudAvatar Color="Color.Warning" Class="my-auto">Z</MudAvatar>
-            <MudAvatar Color="Color.Error" Class="my-auto">R</MudAvatar>
-            <span style="width: 25px;"></span>
-        <MudAvatar Color="Color.Primary" Class="my-auto">V</MudAvatar>
-            @foreach (char c in mudVersion)
-            {
-                if (c != '.')
-                {
-                <MudAvatar Color="Color.Secondary" Class=" my-auto">@c</MudAvatar>
-                }
-                else
-                {
-                    <MudProgressCircular Color="Color.Tertiary" Class="period-dot ma-0 pa-0 ml-n5 mr-n5" Size="Size.Small" Indeterminate="true" />
-                }
-            }
-            <span style="width: 25px;"></span>
-            <MudAvatar Color="Color.Surface" Class="my-auto">T</MudAvatar>
-            <MudAvatar Color="Color.Surface" Variant="Variant.Text" Class="my-auto">H</MudAvatar>
-            <MudAvatar Color="Color.Surface" Class="my-auto">E</MudAvatar>
-            <MudAvatar Color="Color.Surface" Variant="Variant.Text" Class="my-auto">M</MudAvatar>
+    <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceAround">
+
+        <MudAvatar Color="Color.Default" Class="my-auto">M</MudAvatar>
+        <MudAvatar Color="Color.Primary" Class="my-auto">U</MudAvatar>
+        <MudAvatar Color="Color.Secondary" Class="my-auto">D</MudAvatar>
+        <MudAvatar Color="Color.Tertiary" Class="my-auto">B</MudAvatar>
+        <MudAvatar Color="Color.Info" Class="my-auto">L</MudAvatar>
+        <MudAvatar Color="Color.Success" Class="my-auto">A</MudAvatar>
+        <MudAvatar Color="Color.Warning" Class="my-auto">Z</MudAvatar>
+        <MudAvatar Color="Color.Error" Class="my-auto">R</MudAvatar>
+        <span style="width: 25px;"></span>
+        <MudAvatar Color="Color.Surface" Class="my-auto">T</MudAvatar>
+        <MudAvatar Color="Color.Surface" Variant="Variant.Text" Class="my-auto">H</MudAvatar>
         <MudAvatar Color="Color.Surface" Class="my-auto">E</MudAvatar>
-            <span style="width: 25px;"></span>
-            <MudAvatar Color="Color.Success" Variant="Variant.Outlined" Class="my-auto">P</MudAvatar>
-            <MudAvatar Color="Color.Warning" Variant="Variant.Outlined" Class="my-auto">R</MudAvatar>
-            <MudAvatar Color="Color.Error" Variant="Variant.Outlined" Class="my-auto">E</MudAvatar>
-            <MudAvatar Color="Color.Info" Variant="Variant.Outlined" Class="my-auto">V</MudAvatar>
-            <MudAvatar Color="Color.Success" Variant="Variant.Outlined" Class="my-auto">I</MudAvatar>
-            <MudAvatar Color="Color.Warning" Variant="Variant.Outlined" Class="my-auto">E</MudAvatar>
-            <MudAvatar Color="Color.Error" Variant="Variant.Outlined" Class="my-auto">W</MudAvatar>
-</MudStack>
-<MudGrid>
-    <MudItem xs="12">
-        <MudContainer Class="pa-4 pt-6 pb-3">
-            <MudText Typo="Typo.body2">
-                This tool allows you to create a custom theme for MudBlazor. You can customize the theme colors, 
-                typography, and other settings. The tool will generate a theme class or CSS that you can use in your MudBlazor 
-                project. The tool is still in development and may have bugs or missing features. Please report any issues
-                on the GitHub repository. Click
-                <MudLink Href="/about">here</MudLink> to learn more about this tool.
-            </MudText>
-        </MudContainer>
-    </MudItem>
-</MudGrid>
+        <MudAvatar Color="Color.Surface" Variant="Variant.Text" Class="my-auto">M</MudAvatar>
+        <MudAvatar Color="Color.Surface" Class="my-auto">E</MudAvatar>
+        <span style="width: 25px;"></span>
+        <MudAvatar Color="Color.Success" Variant="Variant.Outlined" Class="my-auto">P</MudAvatar>
+        <MudAvatar Color="Color.Warning" Variant="Variant.Outlined" Class="my-auto">R</MudAvatar>
+        <MudAvatar Color="Color.Error" Variant="Variant.Outlined" Class="my-auto">E</MudAvatar>
+        <MudAvatar Color="Color.Info" Variant="Variant.Outlined" Class="my-auto">V</MudAvatar>
+        <MudAvatar Color="Color.Success" Variant="Variant.Outlined" Class="my-auto">I</MudAvatar>
+        <MudAvatar Color="Color.Warning" Variant="Variant.Outlined" Class="my-auto">E</MudAvatar>
+        <MudAvatar Color="Color.Error" Variant="Variant.Outlined" Class="my-auto">W</MudAvatar>
+    </MudStack>
+    <MudGrid>
+        <MudItem xs="12">
+            <MudContainer Class="pa-4 pt-6 pb-3">
+                <MudText Typo="Typo.body2">
+                    This tool allows you to create a custom theme for MudBlazor. You can customize the theme colors,
+                    typography, and other settings. The tool will generate a theme class or CSS that you can use in your MudBlazor
+                    project. The tool is still in development and may have bugs or missing features. Please report any issues
+                    on the GitHub repository. Click
+                    <MudLink Href="/about">here</MudLink> to learn more about this tool.
+                </MudText><br />
+                <center>
+                    <MudText Class="my-n2" Typo="Typo.caption">
+                        <b>Mudblazor Version</b>: @mudVersion
+                        &nbsp;&nbsp;&nbsp;
+                        <b>MudEx Version</b>: @mudExVersion
+                    </MudText>
+                </center>
+            </MudContainer>
+        </MudItem>
+    </MudGrid>
 
 </MudPaper>
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
@@ -492,7 +486,7 @@ color: var(--mud-palette-drawer-text) !important;
 
 @code {
     [CascadingParameter(Name = "IsDarkMode")]
-    private bool isDarkMode { get; set; } = default!;    
+    private bool isDarkMode { get; set; } = default!;
 
     private string _buttonText = "Reply";
     private int _activeButtonId = 0;
@@ -505,11 +499,13 @@ color: var(--mud-palette-drawer-text) !important;
     private string _searchString = string.Empty;
     private int _renderKey = 0;
     private string mudVersion = string.Empty;
+    private string mudExVersion = string.Empty;
 
     protected override void OnInitialized()
     {
         PeopleList = GeneratePeopleData();
         mudVersion = Regex.Replace(Extensions.Extensions.MudBlazorVersion, @"(\.0)+$", string.Empty);
+        mudExVersion = Regex.Replace(Extensions.Extensions.MudExVersion, @"(\.0)+$", string.Empty);
     }
 
 
@@ -561,7 +557,7 @@ color: var(--mud-palette-drawer-text) !important;
 
     private static List<Person> GeneratePeopleData()
     {
-        return         [
+        return [
     new Person("Emma Smith", 34),
     new Person("Liam Johnson", 29),
     new Person("Olivia Williams", 42),
