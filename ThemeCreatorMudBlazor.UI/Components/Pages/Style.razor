@@ -1,15 +1,48 @@
 ﻿@page "/Style"
 @inject StyleService styleService
+@inject IThemeCreatorService themeCreatorService
 
 <PageTitle>CSS Variable Style Lookup</PageTitle>
+<style>
+    .mud-list-item-text > .mud-typography {
+        white-space: nowrap; 
+        overflow: hidden; 
+        text-overflow: ellipsis; 
+        max-width: 100%; 
+    }
 
+    .autocomplete-list {
+        position: absolute;
+        max-height: 500px;
+        overflow-y: auto;
+        width: 300px;
+        background-color: white; /* Ensure it's visible over content */
+        z-index: 1000; /* Adjust z-index to be on top of other elements */
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Optional: Add some shadow for visibility */
+        border: 1px solid #ccc; /* Optional: Add border to differentiate it */
+    }
+
+</style>
 <MudText Typo="Typo.h3">CSS Variable Style Lookup</MudText>
 <br />
-<MudTextField @ref="_searchField" Disabled="@cssDisabled" @bind-Value="cssVariable" Style="width: 300px;" Variant="Variant.Outlined" Immediate="true"
+<MudTextField @ref="_searchField" Disabled="@cssDisabled" ValueChanged="@((string v) => CssVariableChanged(v))" Value="@cssVariable" Style="width: 300px;" Variant="Variant.Outlined" Immediate="true"
               Placeholder="e.g. --mud-palette-primary" Label="Variable to Lookup" FullWidth="false" OnKeyDown="@KeyDown"
-              Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" OnAdornmentClick="@CssValueLookup" />
-<br />
-<MudTable T="ResponseItem" Items="responseList">
+              Adornment="Adornment.End" AdornmentIcon="@(cssVariable.Length > 1 ? Icons.Material.Filled.Clear : string.Empty)" OnAdornmentClick="@CssValueClear" />
+@if (AutoCompleteItems != null && AutoCompleteItems.Count > 0)
+{
+    <MudList Class="autocomplete-list" T="string">
+        @foreach (var item in AutoCompleteItems)
+        {
+            <MudListItem OnClick="@(() =>CssValueSelect(@item))">
+                <MudTooltip Text="@item">
+                    @item
+                </MudTooltip>
+            </MudListItem>
+        }
+    </MudList>
+}
+
+<MudTable Class="mt-4" T="ResponseItem" Items="responseList">
     <ColGroup>
         <col style="width: 30%; min-width: 50px;" />
         <col />
@@ -37,7 +70,51 @@
     private bool cssDisabled = false;
     private List<ResponseItem> responseList = [];
     private MudTextField<string> _searchField = default!;
+    private List<string> AutoCompleteItems = [];
+    private Dictionary<string, List<string>> cssVariableLookup = [];
 
+    // Create inverted index for searching
+    protected async override Task OnInitializedAsync()
+    {
+        var themeSelections = await themeCreatorService.GetThemeSelectionsAsync(1);
+        var customLayouts = await themeCreatorService.GetCustomLayoutsAsync(1);
+        var customShadows = await themeCreatorService.GetCustomShadowsAsync(1);
+        var customTypographies = await themeCreatorService.GetCustomTypographiesAsync(1);
+        var customZindexes = await themeCreatorService.GetCustomZIndexesAsync(1);
+
+        var tempcssVariableLookup = themeSelections
+            .Select(x => new KeyValuePair<string, string>(x.ThemeName, x.CssVariable ?? string.Empty))
+            .Concat(customLayouts.Select(x => new KeyValuePair<string, string>(x.Name, x.CssVariable ?? string.Empty)))
+            .Concat(customShadows.Select(x => new KeyValuePair<string, string>($"{x.Name}-{x.Index}", x.CssVariable ?? string.Empty)))
+            .Concat(customTypographies.Select(x => new KeyValuePair<string, string>($"{x.Name}-{x.TypoType}", x.CssVariable ?? string.Empty)))
+            .Concat(customZindexes.Select(x => new KeyValuePair<string, string>(x.Name, x.CssVariable ?? string.Empty)))
+            .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+
+        // Build the inverted index
+        var invertedIndex = new Dictionary<string, List<string>>();
+
+        // Iterate through the dictionary
+        foreach (var entry in tempcssVariableLookup)
+        {
+            // Remove leading dashes and split on dash
+            var words = entry.Value.TrimStart('-').Split('-');
+
+            foreach (var word in words)
+            {
+                if (!invertedIndex.ContainsKey(word))
+                {
+                    invertedIndex[word] = new List<string>();
+                }
+
+                // Add the full CssVariable to the list for the current word
+                invertedIndex[word].Add(entry.Value);
+            }
+        }
+
+        cssVariableLookup = invertedIndex;
+    }
+
+    // Allow "enter" to search
     private async Task KeyDown(KeyboardEventArgs eventArgs)
     {
         if (eventArgs.Key.Equals("Enter"))
@@ -47,6 +124,76 @@
             await _searchField.FocusAsync();
         }
     }
+
+    private async Task CssValueSelect(string value)
+    {
+        cssVariable = value;
+        AutoCompleteItems.Clear();
+        await CssValueLookup();
+    }
+
+    private async Task CssValueClear()
+    {
+        await CssVariableChanged(string.Empty);
+    }
+
+    private async Task CssVariableChanged(string value)
+    {
+        cssVariable = value ?? string.Empty;
+
+        // Split the input into search terms using '-' and ' ' 
+        string[] searchVariables = cssVariable.TrimStart('-')
+            .Split(new[] { '-', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+        // Clear the autocomplete suggestions if it's empty
+        if (searchVariables.Length == 0)
+        {
+            AutoCompleteItems.Clear();
+            return;
+        }
+
+        // Create a set to store matches
+        var matchingCssVariables = new HashSet<string>();
+
+        foreach (var searchVariable in searchVariables)
+        {
+            // Refine matchingCssVariables based on each search term
+            matchingCssVariables = GetMatchingItems(matchingCssVariables, searchVariable);
+        }
+
+        // Update the autocomplete items
+        AutoCompleteItems = matchingCssVariables.ToList();
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private HashSet<string> GetMatchingItems(HashSet<string> matchingCssVariables, string searchVariable)
+    {
+        // If matchingCssVariables is empty, it's the first search, so we search through the full dictionary
+        if (matchingCssVariables.Count == 0)
+        {
+            foreach (var word in cssVariableLookup.Keys)
+            {
+                if (word.Contains(searchVariable, StringComparison.OrdinalIgnoreCase))
+                {
+                    // Add all corresponding full CSS variable values to the set
+                    foreach (var cssVar in cssVariableLookup[word])
+                    {
+                        matchingCssVariables.Add(cssVar); // Avoid duplicates
+                    }
+                }
+            }
+        }
+        else
+        {
+            // Refine the current matching set by removing non-matching items
+            matchingCssVariables.RemoveWhere(cssVar =>
+                !cssVar.Contains(searchVariable, StringComparison.OrdinalIgnoreCase));
+        }
+
+        return matchingCssVariables;
+    }
+
 
     private async Task CssValueLookup()
     {
