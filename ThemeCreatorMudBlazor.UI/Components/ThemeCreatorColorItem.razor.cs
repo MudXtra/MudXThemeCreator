@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor;
 using MudBlazor.Extensions;
-using MudBlazor.Extensions.Core;
 using MudBlazor.Extensions.Options;
 using MudBlazor.Utilities;
 using Nextended.Core.Extensions;
@@ -16,8 +15,14 @@ namespace ThemeCreatorMudBlazor.UI.Components
         private bool _isOpen;
         private ColorPickerView _view = ColorPickerView.Spectrum;
         private readonly DialogOptionsEx _dialogOptions = new()
-        { CloseOnEscapeKey=true, BackdropClick=true, Position=DialogPosition.Center, 
-              CloseButton=false, Animations = [AnimationType.Pulse], DragMode= MudDialogDragMode.WithoutBounds };
+        {
+            CloseOnEscapeKey = true,
+            BackdropClick = true,
+            Position = DialogPosition.Center,
+            CloseButton = false,
+            Animations = [AnimationType.Pulse],
+            DragMode = MudDialogDragMode.WithoutBounds
+        };
 
         [Parameter]
         public string? Name { get; set; }
@@ -50,16 +55,6 @@ namespace ThemeCreatorMudBlazor.UI.Components
         {
             debounceTimer.Elapsed += OnDebounceElapsed;
             debounceTimer.AutoReset = false;
-        }
-
-        protected async override Task OnAfterRenderAsync(bool firstRender)
-        {
-            if (firstRender)
-            {
-                initialPrimary = await StyleService.GetComputedStylePropertyAsync("--mud-palette-primary");
-                initialSecondary = await StyleService.GetComputedStylePropertyAsync("--mud-palette-secondary");
-                initialTertiary = await StyleService.GetComputedStylePropertyAsync("--mud-palette-tertiary");
-            }
         }
 
         private async Task CopyColor()
@@ -97,9 +92,10 @@ namespace ThemeCreatorMudBlazor.UI.Components
             {
                 mudColor = new MudColor(colorValue);
                 result = true;
-            } catch 
-            { 
-                ShowNotification("Failed paste from " + StringExtensions.ToUpper(colorType, true), Severity.Warning, chip); 
+            }
+            catch
+            {
+                ShowNotification("Failed paste from " + StringExtensions.ToUpper(colorType, true), Severity.Warning, chip);
             }
 
             if (result)
@@ -110,7 +106,7 @@ namespace ThemeCreatorMudBlazor.UI.Components
                 debounceTimer?.Start();
                 ShowNotification("Color pasted from " + StringExtensions.ToUpper(colorType, true), Severity.Info, chip);
                 StateHasChanged();
-            }            
+            }
         }
 
         private async Task PasteColor()
@@ -178,12 +174,15 @@ namespace ThemeCreatorMudBlazor.UI.Components
             });
         }
 
-        public void ToggleOpen()
+        public async Task ToggleOpen()
         {
             _isOpen = !_isOpen;
             if (_isOpen && DefaultColor != null)
             {
                 firstOpenedColor = new MudColor(DefaultColor);
+                initialPrimary = await StyleService.GetComputedStylePropertyAsync("--mud-palette-primary");
+                initialSecondary = await StyleService.GetComputedStylePropertyAsync("--mud-palette-secondary");
+                initialTertiary = await StyleService.GetComputedStylePropertyAsync("--mud-palette-tertiary");
             }
         }
 
