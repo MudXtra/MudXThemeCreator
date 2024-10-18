@@ -1,5 +1,6 @@
 ﻿@inject IThemeCreatorService _themeService
 @inject IThemeStateService _themeState
+@inject IDialogService _dialogService
 
 <MudDrawer @bind-Open="IsDrawerOpen" ClipMode="DrawerClipMode.Docked" Width="300px"
            Elevation="2" Variant="DrawerVariant.Persistent">
@@ -80,10 +81,24 @@
     }
 
     private async Task ResetTheme()
-    {        
-        await _themeState.ResetTheme();
-        await themePanelComponent.ResetTheme();
-        StateHasChanged();
+    {
+        var parameters = new DialogParameters();
+        var dialogOptions = new DialogOptions { CloseButton = false, CloseOnEscapeKey = false, BackdropClick = false };
+        var dialogRef = await _dialogService.ShowAsync<ConfirmDialog>("Reset Theme", parameters, dialogOptions);
+
+        var result = await dialogRef.Result;
+        bool confirmed = false;
+        if (result != null && !result.Canceled && result?.Data != null && (bool)result.Data)
+        {
+            confirmed = true;
+        }
+        if (confirmed)
+        {
+            await _themeState.ResetTheme();
+            await themePanelComponent.ResetTheme();
+            StateHasChanged();
+        }
+
     }
 
     public async Task ToggleTheme(int themeId)
