@@ -1,4 +1,5 @@
 ﻿@page "/Style"
+@using MudBlazor.Utilities
 @inject StyleService styleService
 @inject IThemeCreatorService themeCreatorService
 
@@ -16,28 +17,32 @@
         max-height: 500px;
         overflow-y: auto;
         width: 300px;
-        background-color: white; /* Ensure it's visible over content */
-        z-index: 1000; /* Adjust z-index to be on top of other elements */
-        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Optional: Add some shadow for visibility */
-        border: 1px solid #ccc; /* Optional: Add border to differentiate it */
+        color: var(--mud-palette-drawer-text);
+        background-color: var(--mud-palette-drawer-background); 
+        z-index: 1000; 
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); 
+        border: 1px solid var(--mud-palette-drawer-icon); 
+        border-radius: var(--mud-default-borderradius);
     }
 
+    .style-chip {
+        width: 20px;
+        height: 20px;
+        border: 2px solid var(--mud-palette-drawer-icon);
+    }
 </style>
 <MudText Typo="Typo.h3">CSS Variable Style Lookup</MudText>
 <br />
 <MudTextField @ref="_searchField" Disabled="@cssDisabled" ValueChanged="@((string v) => CssVariableChanged(v))" Value="@cssVariable" Style="width: 300px;" Variant="Variant.Outlined" Immediate="true"
               Placeholder="e.g. --mud-palette-primary" Label="Variable to Lookup" FullWidth="false" OnKeyDown="@KeyDown"
+              HelperText="Start Typing to search" @ondblclick="FillAutoCompleteList"
               Adornment="Adornment.End" AdornmentIcon="@(cssVariable.Length > 1 ? Icons.Material.Filled.Clear : string.Empty)" OnAdornmentClick="@CssValueClear" />
 @if (AutoCompleteItems != null && AutoCompleteItems.Count > 0)
 {
-    <MudList Class="autocomplete-list" T="string">
+    <MudList Class="autocomplete-list" T="string" @bind-SelectedValue="@selectedAutoCompleteItem" SelectionMode="SelectionMode.SingleSelection">
         @foreach (var item in AutoCompleteItems)
         {
-            <MudListItem OnClick="@(() =>CssValueSelect(@item))">
-                <MudTooltip Text="@item">
-                    @item
-                </MudTooltip>
-            </MudListItem>
+            <MudListItem OnClick="@(() =>CssValueSelect(@item))" Text="@item" />
         }
     </MudList>
 }
@@ -45,6 +50,7 @@
 <MudTable Class="mt-4" T="ResponseItem" Items="responseList">
     <ColGroup>
         <col style="width: 30%; min-width: 50px;" />
+        <col />
         <col />
     </ColGroup>
     <HeaderContent>
@@ -54,6 +60,9 @@
         <MudTh>
             Response Received
         </MudTh>
+        <MudTh>
+            Color if Valid
+        </MudTh>
     </HeaderContent>
     <RowTemplate>
         <MudTd>
@@ -61,6 +70,9 @@
         </MudTd>
         <MudTd>
             @context.Response
+        </MudTd>
+        <MudTd>
+            <MudChip T="string" Class="style-chip" Style="@ResponseToColor(context.Response)"> </MudChip>
         </MudTd>
     </RowTemplate>
 </MudTable>
@@ -72,6 +84,8 @@
     private MudTextField<string> _searchField = default!;
     private List<string> AutoCompleteItems = [];
     private Dictionary<string, List<string>> cssVariableLookup = [];
+    private string selectedAutoCompleteItem = string.Empty;
+    private int selectedAutoCompleteIndex = -1;
 
     // Create inverted index for searching
     protected async override Task OnInitializedAsync()
@@ -114,14 +128,70 @@
         cssVariableLookup = invertedIndex;
     }
 
+    private string ResponseToColor(string response)
+    {
+        if (response.Contains("Failure"))
+        {
+            return "background-color: transparent;";
+        }        
+        if (response.Contains("#") || response.Contains("rgb", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"background-color: {response};";
+        }
+        return "display: none"; ;
+    }
+
+    private void FillAutoCompleteList()
+    {
+        if (AutoCompleteItems.Count == 0)
+        {
+            AutoCompleteItems = GetAllCssVariables().ToList();
+        }
+    }
+
     // Allow "enter" to search
     private async Task KeyDown(KeyboardEventArgs eventArgs)
     {
-        if (eventArgs.Key.Equals("Enter"))
+        if (eventArgs.Key.Equals("Enter") &&
+            AutoCompleteItems.Count > 0)
         {
+            if (selectedAutoCompleteIndex > -1 &&
+                AutoCompleteItems.Count > selectedAutoCompleteIndex)
+            {
+                var item = AutoCompleteItems[selectedAutoCompleteIndex];
+                cssVariable = item != null ? item : AutoCompleteItems[0];
+            }
+            else
+            {
+                return;
+            }
             await CssValueLookup();
             await _searchField.ResetAsync();
             await _searchField.FocusAsync();
+            return;
+        }
+        if (eventArgs.Key.Equals("Esc"))
+        {
+            AutoCompleteItems.Clear();
+            await _searchField.ResetAsync();
+            await _searchField.FocusAsync();
+            return;
+        }
+        // switch on key up, down arrows
+        if (eventArgs.Key.Equals("ArrowDown"))
+        {
+            if (AutoCompleteItems.Count  == 0)
+            {
+                AutoCompleteItems = GetAllCssVariables().ToList();
+                return;
+            }
+            selectedAutoCompleteIndex = Math.Min(selectedAutoCompleteIndex + 1, AutoCompleteItems.Count - 1);
+            selectedAutoCompleteItem = AutoCompleteItems[selectedAutoCompleteIndex];
+        }
+        else if (eventArgs.Key.Equals("ArrowUp") && AutoCompleteItems.Count > 0)
+        {
+            selectedAutoCompleteIndex = Math.Max(selectedAutoCompleteIndex - 1, 0);
+            selectedAutoCompleteItem = AutoCompleteItems[selectedAutoCompleteIndex];
         }
     }
 
@@ -163,7 +233,8 @@
 
         // Update the autocomplete items
         AutoCompleteItems = matchingCssVariables.ToList();
-
+        selectedAutoCompleteIndex = -1;
+        selectedAutoCompleteItem = string.Empty;
         await InvokeAsync(StateHasChanged);
     }
 
@@ -194,6 +265,18 @@
         return matchingCssVariables;
     }
 
+    private HashSet<string> GetAllCssVariables()
+    {
+        var allVariables = new HashSet<string>();
+        foreach (var variableList in cssVariableLookup.Values)
+        {
+            foreach (var variable in variableList)
+            {
+                allVariables.Add(variable);
+            }
+        }
+        return allVariables;
+    }
 
     private async Task CssValueLookup()
     {
