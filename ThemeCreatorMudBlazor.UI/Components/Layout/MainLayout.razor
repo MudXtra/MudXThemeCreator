@@ -6,10 +6,6 @@
 <MudSnackbarProvider />
 <MudPopoverProvider />
 
-<CascadingValue Value="@isDarkMode" Name="IsDarkMode" />
-<CascadingValue Value="@_themeId" Name="SelectedThemeId" />
-<CascadingValue Value="@_breakpoint" Name="MainBreakpoint" />
-
 <MudLayout>
     <MudAppBar Elevation="4" Fixed="true" Dense="true">
         <MudIconButton Color="Color.Inherit" Icon="@Icons.Material.Outlined.Menu" Edge="Edge.Start"
@@ -45,9 +41,11 @@
         <MudMainContent Class="mt-12 pa-4">
             <ErrorBoundary>
                 <ChildContent>
-                    <MudBreakpointProvider OnBreakpointChanged="ChangeBreakPoint">
-                        @Body
-                    </MudBreakpointProvider>
+                    <CascadingValue Value="@_breakpoint" Name="MainBreakpoint">
+                        <MudBreakpointProvider OnBreakpointChanged="ChangeBreakPoint">
+                            @Body
+                        </MudBreakpointProvider>
+                    </CascadingValue>
                 </ChildContent>
                 <ErrorContent>
                     <Error/>
