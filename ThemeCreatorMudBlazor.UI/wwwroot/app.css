@@ -129,3 +129,26 @@
 .codeblock:hover .codeblock-actions {
 	opacity: 1;
 }
+
+.scale-on-resize {
+	transform: scale(1);
+	transition: transform 0.3s ease;
+}
+
+@media (max-width: 1480px) {
+	.scale-on-resize {
+		transform: scale(0.8);
+	}
+}
+
+@media (max-width: 1280px) {
+	.scale-on-resize {
+		transform: scale(0.7);
+	}
+}
+
+@media (max-width: 960px) {
+	.scale-on-resize {
+		transform: scale(0.5);
+	}
+}

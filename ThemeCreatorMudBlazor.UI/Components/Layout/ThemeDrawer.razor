@@ -2,39 +2,39 @@
 @inject IThemeStateService _themeState
 @inject IDialogService _dialogService
 
-<MudDrawer @bind-Open="IsDrawerOpen" ClipMode="DrawerClipMode.Docked" Width="300px"
-           Elevation="2" Variant="DrawerVariant.Persistent">
-<div class="ml-2 mt-2 mb-2" style="text-align: center;">
-        <MudSelect T="int" Value="@SelectedTheme" ValueChanged="@ToggleTheme" Placeholder="Select a Pre-Built Theme" Label="AVAILABLE THEMES">
-            <MudSelectItem Value="-1">
-                <MudTooltip Arrow="true" Placement="Placement.Right" Text="@SelectedThemeOtherText">
-                    @SelectedThemeName
-                </MudTooltip>                
-            </MudSelectItem>
-            @foreach (CustomTheme customTheme in customThemes)
-            {
-                <MudSelectItem T="int" Value="@customTheme.Id">
-                    <MudTooltip Arrow="true" Placement="Placement.Right" Text="@customTheme.OtherText">
-                        @customTheme.Name
+    <MudDrawer @bind-Open="IsDrawerOpen" ClipMode="DrawerClipMode.Docked" Width="300px"
+               Elevation="2" Variant="DrawerVariant.Persistent">
+        <div class="ml-2 mt-2 mb-2" style="text-align: center;">
+            <MudSelect T="int" Value="@SelectedTheme" ValueChanged="@ToggleTheme" Placeholder="Select a Pre-Built Theme" Label="AVAILABLE THEMES">
+                <MudSelectItem Value="-1">
+                    <MudTooltip Arrow="true" Placement="Placement.Right" Text="@SelectedThemeOtherText">
+                        @SelectedThemeName
                     </MudTooltip>
                 </MudSelectItem>
-            }
-        </MudSelect>
-        <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-            <MudButton OnClick="@(() => ToggleDark())" Class="mt-2"
-                       StartIcon="@(!IsDarkMode ? Icons.Material.Outlined.WbSunny : Icons.Material.Outlined.NightsStay)">
-                @(!IsDarkMode ? "Light Mode" : "Dark Mode")
-            </MudButton>
-            <MudTooltip Text="Reset All Theme Values">
-                <MudButton Class="mt-2" StartIcon="@Icons.Material.Outlined.Refresh" OnClick="@ResetTheme" />
-            </MudTooltip>
-        </MudStack>
-        <!-- div to take up remaining vh and allow scrolling -->
-        <div style="overflow-y: auto; height: 85vh;">
-            <ThemePanels @ref="themePanelComponent" ThemeId="@SelectedTheme" />
-        </div>        
-</div>    
-</MudDrawer>
+                @foreach (CustomTheme customTheme in customThemes)
+                {
+                    <MudSelectItem T="int" Value="@customTheme.Id">
+                        <MudTooltip Arrow="true" Placement="Placement.Right" Text="@customTheme.OtherText">
+                            @customTheme.Name
+                        </MudTooltip>
+                    </MudSelectItem>
+                }
+            </MudSelect>
+            <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                <MudButton OnClick="@(() => ToggleDark())" Class="mt-2"
+                           StartIcon="@(!IsDarkMode ? Icons.Material.Outlined.WbSunny : Icons.Material.Outlined.NightsStay)">
+                    @(!IsDarkMode ? "Light Mode" : "Dark Mode")
+                </MudButton>
+                <MudTooltip Text="Reset All Theme Values">
+                    <MudButton Class="mt-2" StartIcon="@Icons.Material.Outlined.Refresh" OnClick="@ResetTheme"/>
+                </MudTooltip>
+            </MudStack>
+            <!-- div to take up remaining vh and allow scrolling -->
+            <div style="overflow-y: auto; height: 85vh;">
+                <ThemePanels @ref="themePanelComponent" ThemeId="@SelectedTheme"/>
+            </div>
+        </div>
+    </MudDrawer>
 
 @code {
     [Parameter]
@@ -56,13 +56,13 @@
     private string SelectedThemeOtherText => _themeState.ThemeOtherText.Length > 0 ?
                                             _themeState.ThemeOtherText :
                                             "Last known state of the theme you have been working with. Saves from session to session.";
-
-    protected async override Task OnInitializedAsync()
+    private Breakpoint _breakpoint = Breakpoint.Md;
+    protected override async Task OnInitializedAsync()
     {
         customThemes = await _themeService.GetCustomThemesAsync();
     }
 
-    protected async override Task OnParametersSetAsync()
+    protected override async Task OnParametersSetAsync()
     {
         customThemes = await _themeService.GetCustomThemesAsync();
         StateHasChanged();
@@ -70,14 +70,12 @@
 
     public async Task ToggleDark()
     {
-        IsDarkMode = !IsDarkMode;
-        await IsDarkModeChanged.InvokeAsync(IsDarkMode);
+        await IsDarkModeChanged.InvokeAsync(!IsDarkMode);
     }
 
     public async Task ToggleDrawer()
     {
-        IsDrawerOpen = !IsDrawerOpen;
-        await IsDrawerOpenChanged.InvokeAsync(IsDrawerOpen);
+        await IsDrawerOpenChanged.InvokeAsync(!IsDrawerOpen);
     }
 
     private async Task ResetTheme()
@@ -87,11 +85,7 @@
         var dialogRef = await _dialogService.ShowAsync<ConfirmDialog>("Reset Theme", parameters, dialogOptions);
 
         var result = await dialogRef.Result;
-        bool confirmed = false;
-        if (result != null && !result.Canceled && result?.Data != null && (bool)result.Data)
-        {
-            confirmed = true;
-        }
+        bool confirmed = result != null && !result.Canceled && result?.Data != null && (bool)result.Data;
         if (confirmed)
         {
             await _themeState.ResetTheme();

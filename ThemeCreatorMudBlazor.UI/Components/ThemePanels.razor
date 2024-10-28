@@ -2,10 +2,10 @@
 @inject IThemeCreatorService themeService
 @inject IThemeStateService themeState
 
-<MudTextField T="string" Value="@searchString" Immediate="true" ValueChanged="@SearchAllPanels"
+<MudTextField T="string" Value="@_searchString" Immediate="true" ValueChanged="@SearchAllPanels"
               Placeholder="Search by name" Variant="Variant.Outlined" Class="mx-2 my-2"
               Typo="Typo.caption" Margin="Margin.Dense" Clearable DebounceInterval="150" />
-@if (IsLoading)
+@if (_isLoading)
 {
 <MudOverlay Visible="true" LightBackground="true" AutoClose="false" Absolute="true">
     <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
@@ -19,7 +19,7 @@ else
             <MudExpansionPanel Class="ma-0 pa-0" Text="@palette.Name" @bind-Expanded="@panelDictionary[$"p{palette.Id}"]">            
                     <div class="pa-1 ma-0" style="max-height: 45vh; overflow-y: auto; overflow-x: hidden">
                     @foreach (var themeSelection in themeSelections
-                   .Where(x => !shouldFilter || x.ThemeName.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+                   .Where(x => !shouldFilter || x.ThemeName.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
                    .OrderBy(x => x.OrderPriority)
                    .ThenBy(x => x.Id))
                         {
@@ -39,7 +39,7 @@ else
                         <div class="pa-1 ma-0">
                             @switch (option.Name)
                             {
-                                @case "Shadows": <!-- Shadows isn't something that gets customized often, hiding it for now -->
+                                    case "Shadows": <!-- Shadows isn't something that gets customized often, hiding it for now -->
 @*                                     <div @onkeydown:preventDefault="true">
                                         <MudStack Class="pr-6 shadow-selector" Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween"
                                                   tabindex="0" @onkeydown="HandleShadowKeyPress">
@@ -58,15 +58,15 @@ else
                                     break;
                                 case "Layout Properties":
                                 @foreach (CustomLayoutProperty layoutProp in customLayouts
-                                    .Where(x => !shouldFilter || x.Name.Contains(searchString, StringComparison.OrdinalIgnoreCase)))
+                                    .Where(x => !shouldFilter || x.Name.Contains(_searchString, StringComparison.OrdinalIgnoreCase)))
                                     {
                                         <ThemeCreatorLayoutItem LayoutProp="@layoutProp"
                                                                 LayoutPropChanged="@(async (int newSlider) => await LayoutPropertyChanged(layoutProp.Id, newSlider))" />
                                     }
                                     break;
                                 case "Typography":
-                                    <ThemeCreatorSpinner SpinnerIndex="_typoValue" SpinnerIndexChanged="async (int newVal) => await SpinnerIndexChanged(newVal)" SpinnerList="@typoList" />
-                                    @foreach (CustomTypography typo in customTypographies.Where(t => t.TypoType == typoList[_typoValue] && t.DataType != "String[]").ToList())
+                                    <ThemeCreatorSpinner SpinnerIndex="_typoValue" SpinnerIndexChanged="async (int newVal) => await SpinnerIndexChanged(newVal)" SpinnerList="@_typoList" />
+                                    @foreach (CustomTypography typo in customTypographies.Where(t => t.TypoType == _typoList[_typoValue] && t.DataType != "String[]").ToList())
                                     {
                                         var typoIndex = typo.Id;
                                         @switch (typo.DataType)
@@ -105,7 +105,7 @@ else
 
                                     break;
                                 case "ZIndex":
-                                @foreach (CustomZIndex zIndex in customZIndexes.Where(x => !shouldFilter || x.Name.Contains(searchString, StringComparison.OrdinalIgnoreCase)))
+                                @foreach (CustomZIndex zIndex in customZIndexes.Where(x => !shouldFilter || x.Name.Contains(_searchString, StringComparison.OrdinalIgnoreCase)))
                                     {
                                         <ThemeCreatorNumberItem T="int" Value="@(Convert.ToInt32(zIndex.Default))"
                                                                 ValueChanged="@(async (int newVal) => await NumberItemChanged(zIndex.Id, newVal, "zindex"))"
@@ -133,13 +133,13 @@ else
     private List<CustomLayoutProperty> customLayouts = [];
     private List<CustomTypography> customTypographies = [];
     private List<CustomZIndex> customZIndexes = [];
-    private List<string> typoList = [];
-    private List<string> selectedFonts = [];
+    private List<string> _typoList = [];
+    private List<string> _selectedFonts = [];
     private int _typoValue = 0;
-    private int currentShadowIndex = 0;
-    private int defaultThemeId = 1;
-    private string searchString = string.Empty;
-    public bool IsLoading = true;
+    private int _currentShadowIndex = 0;
+    private int _defaultThemeId = 1;
+    private string _searchString = string.Empty;
+    private bool _isLoading = true;
 
     private Dictionary<string, bool> panelDictionary = [];
     private bool shouldFilter = false;
@@ -157,7 +157,7 @@ else
 
     private void SearchAllPanels(string val)
     {
-        searchString = val;
+        _searchString = val;
         shouldFilter = !string.IsNullOrWhiteSpace(val) && val.Length >= 2;
         var comparison = StringComparison.OrdinalIgnoreCase;
 
@@ -192,7 +192,6 @@ else
                     if (kvp.Key.StartsWith("p"))
                     {
                         // Handle ThemePalette panels
-                        int paletteId = int.Parse(kvp.Key[1..]);
                         return matchingThemeSelections.Any(); // If any themes match, show palette
                     }
                     else if (kvp.Key.StartsWith("o"))
@@ -210,13 +209,13 @@ else
             // Reset all panels to collapsed state except the first when search is cleared
             panelDictionary = panelDictionary.ToDictionary(
                 kvp => kvp.Key,
-                kvp => kvp.Key == "p1" ? true : false
+                kvp => kvp.Key == "p1"
             );
         }
         StateHasChanged();
     }
 
-    protected async override Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync()
     {
         themeOptions = await themeService.GetActiveThemeOptionsAsync();
         themePalettes = await themeService.GetThemePalettesAsync();
@@ -228,24 +227,24 @@ else
         {
             panelDictionary.Add($"p{palette.Id}", palette.Id == 1);
         }
-        themeSelectionInfos = ThemeCreatorMudBlazor.DAL.Data.SeedDescriptionData.SeedDescriptions();
+        themeSelectionInfos = DAL.Data.SeedDescriptionData.SeedDescriptions();
     }
 
     #region Loading and Selecting Full Themes
 
     private async Task LoadDefaultThemeValues()
     {
-        themeSelections = await themeService.GetThemeSelectionsAsync(defaultThemeId);
+        themeSelections = await themeService.GetThemeSelectionsAsync(_defaultThemeId);
         await themeState.UpdateThemeData(themeSelections, false);
-        customShadows = await themeService.GetCustomShadowsAsync(defaultThemeId);
+        customShadows = await themeService.GetCustomShadowsAsync(_defaultThemeId);
         await themeState.UpdateThemeData(customShadows, false);
-        customLayouts = await themeService.GetCustomLayoutsAsync(defaultThemeId);
+        customLayouts = await themeService.GetCustomLayoutsAsync(_defaultThemeId);
         await themeState.UpdateThemeData(customLayouts, false);
-        customTypographies = await themeService.GetCustomTypographiesAsync(defaultThemeId);
+        customTypographies = await themeService.GetCustomTypographiesAsync(_defaultThemeId);
         await themeState.UpdateThemeData(customTypographies, false);
-        customZIndexes = await themeService.GetCustomZIndexesAsync(defaultThemeId);
+        customZIndexes = await themeService.GetCustomZIndexesAsync(_defaultThemeId);
         await themeState.UpdateThemeData(customZIndexes, false);
-        typoList = customTypographies
+        _typoList = customTypographies
             .Select(t => t.TypoType)
             .Distinct()
             .ToList();
@@ -253,12 +252,12 @@ else
 
     private async Task Loading(bool toLoad)
     {
-        IsLoading = toLoad;
+        _isLoading = toLoad;
         await InvokeAsync(StateHasChanged);
         await Task.Delay(1);        
     }
 
-    protected async override Task OnParametersSetAsync()
+    protected override async Task OnParametersSetAsync()
     {
         await Loading(true);
         switch (ThemeId)
@@ -360,7 +359,7 @@ else
         }
     }
 
-    public static void UpdateThemeListValues<T>(List<T> originalList, List<T> updatedList, Func<T, string> keySelector, Action<T, T> updateAction)
+    private static void UpdateThemeListValues<T>(List<T> originalList, List<T> updatedList, Func<T, string> keySelector, Action<T, T> updateAction)
     {
         // generic linq statement to update the Func value of the theme class based on the keySelector
         foreach (var original in originalList)
@@ -408,29 +407,29 @@ else
         await themeState.UpdateThemeData(themeSelections, true, true);
     }
 
-    private async Task TextItemChanged(int Id, string text, string typo)
+    private async Task TextItemChanged(int id, string text, string typo)
     {
         if (typo == "typo")
         {
-            var foundTypoItem = customTypographies.FirstOrDefault(x => x.Id == Id);
+            var foundTypoItem = customTypographies.FirstOrDefault(x => x.Id == id);
             ArgumentNullException.ThrowIfNull(foundTypoItem); // should never be null.
             foundTypoItem.Default = text;
             await themeState.UpdateThemeData(customTypographies, true, true);
         }
     }
 
-    private async Task NumberItemChanged(int Id, double newVal, string typo)
+    private async Task NumberItemChanged(int id, double newVal, string typo)
     {
         if (typo == "typo")
         {
-            var foundTypoItem = customTypographies.FirstOrDefault(x => x.Id == Id);
+            var foundTypoItem = customTypographies.FirstOrDefault(x => x.Id == id);
             ArgumentNullException.ThrowIfNull(foundTypoItem); // should never be null.
             foundTypoItem.Default = newVal.ToString();
             await themeState.UpdateThemeData(customTypographies, true, true);
         }
         else if (typo == "zindex")
         {
-            var foundZItem = customZIndexes.FirstOrDefault(x => x.Id == Id);
+            var foundZItem = customZIndexes.FirstOrDefault(x => x.Id == id);
             ArgumentNullException.ThrowIfNull(foundZItem); // should never be null.
             foundZItem.Default = newVal.ToString();
             await themeState.UpdateThemeData(customZIndexes, true, true);
@@ -447,11 +446,11 @@ else
 
     private void HandleShadowKeyPress(KeyboardEventArgs e)
     {
-        if (e.Key == "ArrowUp" && currentShadowIndex > 0)
+        if (e.Key == "ArrowUp" && _currentShadowIndex > 0)
         {
             ChangeShadowIndex(-1);
         }
-        else if (e.Key == "ArrowDown" && currentShadowIndex < customShadows.Count - 1)
+        else if (e.Key == "ArrowDown" && _currentShadowIndex < customShadows.Count - 1)
         {
             ChangeShadowIndex(1);
         }
@@ -459,7 +458,7 @@ else
 
     private void ChangeShadowIndex(int delta)
     {
-        currentShadowIndex = Math.Clamp(currentShadowIndex + delta, 0, customShadows.Count - 1);
+        _currentShadowIndex = Math.Clamp(_currentShadowIndex + delta, 0, customShadows.Count - 1);
     }
 
     #endregion
