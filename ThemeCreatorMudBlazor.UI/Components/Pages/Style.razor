@@ -49,9 +49,9 @@
 
 <MudTable Class="mt-4" T="ResponseItem" Items="responseList">
     <ColGroup>
-        <col style="width: 30%; min-width: 50px;" />
-        <col />
-        <col />
+        <col style="max-width: 40%;" />
+        <col style="max-width: 30%;" />
+        <col style="max-width: 30%;" />
     </ColGroup>
     <HeaderContent>
         <MudTh>
@@ -61,17 +61,17 @@
             Response Received
         </MudTh>
         <MudTh>
-            Color if Valid
+            Color (If Valid)
         </MudTh>
     </HeaderContent>
     <RowTemplate>
-        <MudTd>
-            @context.Variable
+        <MudTd DataLabel="Variable">
+            <b>@context.Variable</b>
         </MudTd>
-        <MudTd>
+        <MudTd DataLabel="Response">
             @context.Response
         </MudTd>
-        <MudTd>
+        <MudTd DataLabel="Color">
             <MudChip T="string" Class="style-chip" Style="@ResponseToColor(context.Response)"> </MudChip>
         </MudTd>
     </RowTemplate>

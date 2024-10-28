@@ -142,14 +142,10 @@
 
     public class HashHelper
     {
-        public static string GenerateHash(string input, string algorithm = "SHA256")
+        public static string GenerateHash(string input)
         {
-            using (var hashAlgorithm = HashAlgorithm.Create(algorithm))
-            {
-                byte[] data = Encoding.UTF8.GetBytes(input);
-                byte[] hashBytes = hashAlgorithm.ComputeHash(data);
-                return Convert.ToHexString(hashBytes);
-            }
+            byte[] hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(input));
+            return Convert.ToHexString(hashBytes);
         }
 
         public static bool VerifyHash(string input, string storedHash)

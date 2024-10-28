@@ -6,53 +6,53 @@
 <MudSnackbarProvider />
 <MudPopoverProvider />
 
-<CascadingValue Value="@isDarkMode" Name="IsDarkMode" />
-<CascadingValue Value="@_themeId" Name="SelectedThemeId" />
-
 <MudLayout>
-		<MudAppBar Elevation="4" Fixed="true" Dense="true">
-		    <MudIconButton Color="Color.Inherit" Icon="@Icons.Material.Outlined.Menu" Edge="Edge.Start" 
-                OnClick="@(() => _themeDrawer.ToggleDrawer())" />
-			<MudText Style="font-weight: bold;" Class="ml-3">MudBlazor Theme Creator</MudText>
-			<MudSpacer />
-            <MudTooltip Text="Home">
-                <MudIconButton Href="/" Icon="@Icons.Material.Outlined.Home" Color="Color.Inherit" />
-            </MudTooltip>
-            <MudTooltip Text="CSS Variable Lookup">
-                <MudIconButton Href="/Style" Icon="@Icons.Material.Outlined.Css" Color="Color.Inherit" />
-            </MudTooltip>
-            <MudTooltip Text="Upload Bootstrap Theme">
-                <MudIconButton Href="/uploadcss" Icon="@Icons.Material.Outlined.CloudUpload" Color="Color.Inherit" />
-            </MudTooltip>
-            <MudTooltip Text="Export Theme">
-                <MudIconButton Href="/export" Icon="@Icons.Material.Outlined.ImportExport" Color="Color.Inherit" />
-            </MudTooltip>
-            <MudTooltip Text="About / Issues">
-                <MudIconButton Href="/about" Icon="@Icons.Material.Outlined.Info" Color="Color.Inherit" />
-            </MudTooltip>
-		    <MudTooltip Text="Toggle Dark/Light Mode">
-                <MudIconButton id="darkToggle" OnClick="@(() => _themeDrawer.ToggleDark())" 
-					   Icon="@(!isDarkMode ? Icons.Material.Outlined.WbSunny : Icons.Material.Outlined.NightsStay)"
-					   Color="Color.Inherit" />
-            </MudTooltip>
-		
-		</MudAppBar>
-		@if (!DoNotRenderForUnitTest)
-		{
-            <ThemeDrawer @ref="_themeDrawer" @bind-IsDrawerOpen="isDrawerOpen"
-					 @bind-IsDarkMode="isDarkMode" @bind-IsDarkMode:after="DarkModeChanged" 
-                     SelectedTheme="_themeId" />
-			<MudMainContent Class="mt-12 pa-4">
-				<ErrorBoundary>
-					<ChildContent>
-						@Body
-					</ChildContent>
-					<ErrorContent>
-						<Error />
-					</ErrorContent>
-				</ErrorBoundary>
-			</MudMainContent>
-		}
+    <MudAppBar Elevation="4" Fixed="true" Dense="true">
+        <MudIconButton Color="Color.Inherit" Icon="@Icons.Material.Outlined.Menu" Edge="Edge.Start"
+                       OnClick="@(() => _themeDrawer.ToggleDrawer())"/>
+        <MudText Style="font-weight: bold;" Class="ml-3">MudBlazor Theme Creator</MudText>
+        <MudSpacer/>
+        <MudTooltip Text="Home">
+            <MudIconButton Href="/" Icon="@Icons.Material.Outlined.Home" Color="Color.Inherit"/>
+        </MudTooltip>
+        <MudTooltip Text="CSS Variable Lookup">
+            <MudIconButton Href="/Style" Icon="@Icons.Material.Outlined.Css" Color="Color.Inherit"/>
+        </MudTooltip>
+        <MudTooltip Text="Upload Bootstrap Theme">
+            <MudIconButton Href="/uploadcss" Icon="@Icons.Material.Outlined.CloudUpload" Color="Color.Inherit"/>
+        </MudTooltip>
+        <MudTooltip Text="Export Theme">
+            <MudIconButton Href="/export" Icon="@Icons.Material.Outlined.ImportExport" Color="Color.Inherit"/>
+        </MudTooltip>
+        <MudTooltip Text="About / Issues">
+            <MudIconButton Href="/about" Icon="@Icons.Material.Outlined.Info" Color="Color.Inherit"/>
+        </MudTooltip>
+        <MudTooltip Text="Toggle Dark/Light Mode">
+            <MudIconButton id="darkToggle" OnClick="@(() => _themeDrawer.ToggleDark())"
+                           Icon="@(!isDarkMode ? Icons.Material.Outlined.WbSunny : Icons.Material.Outlined.NightsStay)"
+                           Color="Color.Inherit"/>
+        </MudTooltip>
+    </MudAppBar>
+    <ThemeDrawer @ref="_themeDrawer" @bind-IsDrawerOpen="isDrawerOpen"
+                 @bind-IsDarkMode="isDarkMode" @bind-IsDarkMode:after="DarkModeChanged"
+                 SelectedTheme="_themeId"/>
+    @if (!DoNotRenderForUnitTest)
+    {
+        <MudMainContent Class="mt-12 pa-4">
+            <ErrorBoundary>
+                <ChildContent>
+                    <CascadingValue Value="@_breakpoint" Name="MainBreakpoint">
+                        <MudBreakpointProvider OnBreakpointChanged="ChangeBreakPoint">
+                            @Body
+                        </MudBreakpointProvider>
+                    </CascadingValue>
+                </ChildContent>
+                <ErrorContent>
+                    <Error/>
+                </ErrorContent>
+            </ErrorBoundary>
+        </MudMainContent>
+    }
 </MudLayout>
 
 @code {
@@ -62,6 +62,7 @@
     private string themeDarkLightCSS = string.Empty;
     private string themeStaticCSS = string.Empty;
     private int _themeId = 1;
+    private Breakpoint _breakpoint = Breakpoint.Lg;
 
     [Parameter]
     public bool DoNotRenderForUnitTest { get; set; } = false;
@@ -119,6 +120,13 @@
             _themeId = themeState.ThemeId;
             CssChanged();
         }
+    }
+    
+    private void ChangeBreakPoint(Breakpoint arg)
+    {
+        _breakpoint = arg;
+        Console.WriteLine($"Breakpoint: {arg}");
+        isDrawerOpen = arg is not (Breakpoint.Xs or Breakpoint.Sm);
     }
 }
 <style>@themeDarkLightCSS</style>
