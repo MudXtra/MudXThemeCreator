@@ -152,18 +152,16 @@
     // Allow "enter" to search
     private async Task KeyDown(KeyboardEventArgs eventArgs)
     {
-        if (eventArgs.Key.Equals("Enter") &&
-            AutoCompleteItems.Count > 0)
+        if (eventArgs.Key.Equals("Enter"))
         {
-            if (selectedAutoCompleteIndex > -1 &&
-                AutoCompleteItems.Count > selectedAutoCompleteIndex)
+            if (AutoCompleteItems.Count > 0)
             {
-                var item = AutoCompleteItems[selectedAutoCompleteIndex];
-                cssVariable = item != null ? item : AutoCompleteItems[0];
-            }
-            else
-            {
-                return;
+                if (selectedAutoCompleteIndex > -1 &&
+                    AutoCompleteItems.Count > selectedAutoCompleteIndex)
+                {
+                    var item = AutoCompleteItems[selectedAutoCompleteIndex];
+                    cssVariable = item != null ? item : AutoCompleteItems[0];
+                }
             }
             await CssValueLookup();
             await _searchField.ResetAsync();
