@@ -168,7 +168,7 @@ namespace ThemeCreatorMudBlazor.DAL.Services
             return cssBuilder.ToString();
         }
         
-        public string GenerateCSharpCode()
+        public string GenerateCSharpCodeV7(bool forV8 = false)
         {
             var className = string.IsNullOrWhiteSpace(ThemeName) ? "CustomTheme" : ThemeName.Split(' ').Last() + "Theme";
             className = className[0].ToString().ToUpper() + className[1..].ToLower();
@@ -258,18 +258,39 @@ namespace ThemeCreatorMudBlazor.DAL.Services
 
                 codeBuilder.AppendLine("        Typography = new Typography()");
                 codeBuilder.AppendLine("        {");
+                var typoAddon = forV8 ? "Typography" : "";
                 foreach (var typo in typoList)
                 {
+                    if (forV8 && typo == "Input")
+                    {
+                        continue;
+                    }
                     var typoTypographies = SelectedTypographies.Where(x => x.TypoType == typo).ToList();
                     if (typoTypographies.Count == 0) continue;
 
-                    codeBuilder.AppendLine($"            {typo} = new {typo}");
+                    codeBuilder.AppendLine($"            {typo} = new {typo}{typoAddon}");
                     codeBuilder.AppendLine("            {");
                     foreach (var typography in typoTypographies)
                     {
+                        var dataType = "";
+                        if (forV8)
+                        {
+                            if (typography.Name == "FontWeight" || typography.Name == "LineHeight")
+                            {
+                                dataType = "string";
+                            }
+                            else
+                            {
+                                dataType = typography.DataType; 
+                            }                            
+                        }
+                        else
+                        {
+                            dataType = typography.DataType;
+                        }
                         if (!string.IsNullOrEmpty(typography.Name) && !string.IsNullOrEmpty(typography.Default))
                         {
-                            switch (typography.DataType)
+                            switch (dataType)
                             {
                                 case "String[]":
                                     string[] output = typography.Default.Split(", ", StringSplitOptions.RemoveEmptyEntries);
@@ -311,6 +332,12 @@ namespace ThemeCreatorMudBlazor.DAL.Services
             codeBuilder.AppendLine("    };");
 
             return codeBuilder.ToString();
+        }
+
+        public string GenerateCSharpCodeV8()
+        {
+            var codeBuilder = GenerateCSharpCodeV7(true);
+            return codeBuilder;
         }
     }
 }

@@ -33,7 +33,7 @@
 </MudGrid>
 <MudExpansionPanels Class="save-expansion-panels" MultiExpansion="true">
 
-    <MudExpansionPanel Text="Theme Class in C#">
+    <MudExpansionPanel Text="Theme Class MudBlazor v7.x.x in C#">
         <MudExpansionPanel Text="Instructions">
             This will show a C# class you can place somewhere in your application and reference from ThemeProvider in your MainLayout.razor.
             <ol class="px-6 pb-1 pt-3">
@@ -47,7 +47,24 @@
             </ol>
         </MudExpansionPanel>
 
-        <CodeBlock @key="keyId" Language="csharp" Code="@themeCode" />
+        <CodeBlock @key="keyId" Language="csharp" Code="@themeCodeV7" />
+    </MudExpansionPanel>
+
+    <MudExpansionPanel Text="Theme Class MudBlazor v8.x.x in C#">
+        <MudExpansionPanel Text="Instructions">
+            This will show a C# class you can place somewhere in your application and reference from ThemeProvider in your MainLayout.razor.
+            <ol class="px-6 pb-1 pt-3">
+                <li>Copy the Contents below, copy icon is in upper right.</li>
+                <li>In Visual Studio "Add Class" if you do not already have a custom theme class.</li>
+                <li>Name that Class something like DefaultThemes or CustomThemes as you wish</li>
+                <li>
+                    Inside the class paste the contents of your clipboard, making sure to update the themename
+                    <ul class="pl-3 pb-1"><li>- public static readonly MudTheme [ThemeNameHere]</li></ul>
+                </li>
+            </ol>
+        </MudExpansionPanel>
+
+        <CodeBlock @key="keyId" Language="csharp" Code="@themeCodeV8" />
     </MudExpansionPanel>
 
     <MudExpansionPanel Text="CSS Classes">
@@ -87,7 +104,8 @@
     private string themeLight = string.Empty;
     private string themeDark = string.Empty;
     private string themeStatic = string.Empty;
-    private string themeCode = string.Empty;
+    private string themeCodeV7 = string.Empty;
+    private string themeCodeV8 = string.Empty;
     private int keyId = 0;
 
     protected override void OnInitialized()
@@ -95,7 +113,8 @@
         themeLight = themeState.GenerateDarkLightCSS(false);
         themeDark = themeState.GenerateDarkLightCSS(true);
         themeStatic = themeState.GenerateStaticCSS();
-        themeCode = themeState.GenerateCSharpCode();
+        themeCodeV7 = themeState.GenerateCSharpCodeV7();
+        themeCodeV8 = themeState.GenerateCSharpCodeV8();
     }
 
     private void RefreshData()
@@ -103,7 +122,8 @@
         themeLight = themeState.GenerateDarkLightCSS(false);
         themeDark = themeState.GenerateDarkLightCSS(true);
         themeStatic = themeState.GenerateStaticCSS();
-        themeCode = themeState.GenerateCSharpCode();
+        themeCodeV7 = themeState.GenerateCSharpCodeV7();
+        themeCodeV8 = themeState.GenerateCSharpCodeV8();
         keyId++;
     }
 }
