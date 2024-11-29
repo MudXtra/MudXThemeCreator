@@ -1,6 +1,6 @@
 ﻿
 <MudOverlay @bind-Visible="_isOpen" AutoClose="true" />
-<div class="mud-list-item-clickable mud-ripple pr-4 py-3" @onclick="ToggleOpen" data-tooltip="@ToolTipText">
+<div class="mud-list-item-clickable mud-ripple pr-4 py-3 mud-width-full" @onclick="ToggleOpen">
     <MudStack Row AlignItems="AlignItems.Center" Class="pl-0 ml-0">
         <!-- TODO Link tooltip somehow -->
             <MudText Typo="Typo.body2" Class="left-text">@Name</MudText>

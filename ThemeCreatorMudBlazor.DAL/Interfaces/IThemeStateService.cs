@@ -23,6 +23,7 @@ namespace ThemeCreatorMudBlazor.DAL.Interfaces
         Task ResetTheme();
         string GenerateDarkLightCSS(bool isDarkSetting);
         string GenerateStaticCSS();
-        string GenerateCSharpCode();
+        string GenerateCSharpCodeV7(bool forV8 = false);
+        string GenerateCSharpCodeV8();
     }
 }

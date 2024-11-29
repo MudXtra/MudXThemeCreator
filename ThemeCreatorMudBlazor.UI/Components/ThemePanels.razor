@@ -7,40 +7,41 @@
               Typo="Typo.caption" Margin="Margin.Dense" Clearable DebounceInterval="150" />
 @if (_isLoading)
 {
-<MudOverlay Visible="true" LightBackground="true" AutoClose="false" Absolute="true">
-    <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
-</MudOverlay>
+    <MudOverlay Visible="true" LightBackground="true" AutoClose="false" Absolute="true">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+    </MudOverlay>
 }
 else
 {
-<MudExpansionPanels Elevation="3" MultiExpansion>
-    @foreach (ThemePalette palette in themePalettes)
-    {
-            <MudExpansionPanel Class="ma-0 pa-0" Text="@palette.Name" @bind-Expanded="@panelDictionary[$"p{palette.Id}"]">            
-                    <div class="pa-1 ma-0" style="max-height: 45vh; overflow-y: auto; overflow-x: hidden">
+    <MudExpansionPanels Elevation="3" MultiExpansion>
+        @foreach (ThemePalette palette in themePalettes)
+        {
+            <MudExpansionPanel Class="ma-0 pa-0" Text="@palette.Name" @bind-Expanded="@panelDictionary[$"p{palette.Id}"]">
+                <div class="pa-1 ma-0" style="max-height: 45vh; overflow-y: auto; overflow-x: hidden">
                     @foreach (var themeSelection in themeSelections
                    .Where(x => !shouldFilter || x.ThemeName.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
                    .OrderBy(x => x.OrderPriority)
                    .ThenBy(x => x.Id))
-                        {
-                            <div class="mb-1" data-tooltip="@themeSelection.CssVariable">
+                    {
+                        <div class="mb-1 tooltip-fit mud-width-full" data-tooltip="@themeSelection.CssVariable">
                             <ThemeCreatorColorItem @key="@(new Guid().ToString())" Name="@themeSelection.ThemeName" ToolTipText="@(ThemeSelectionTooltip(palette.Id))"
-                                                       ColorChanged="@(async (MudColor newCol) => await ThemeColorChanged(themeSelection.Id, newCol, palette.Id))"
-                                                       DefaultColor="@(palette.Id == 1 ? themeSelection.LightValueHex : themeSelection.DarkValueHex)" />
-                            </div>
-                        }
-                    </div>
+                                                   ColorChanged="@(async (MudColor newCol) => await ThemeColorChanged(themeSelection.Id, newCol, palette.Id))"
+                                                   DefaultColor="@(palette.Id == 1 ? themeSelection.LightValueHex : themeSelection.DarkValueHex)" />
+                        </div>
+                    }
+                </div>
             </MudExpansionPanel>
-    }    
-    @foreach (ThemeOption option in themeOptions.Where(x => x.Name != "Shadows").ToList())
-    {
+        }
+        @foreach (ThemeOption option in themeOptions.Where(x => x.Name != "Shadows").ToList())
+        {
             <MudExpansionPanel Class="ma-0 pa-0" Text="@option.Name" @bind-Expanded="@panelDictionary[$"o{option.Id}"]">
-                    <div class="pa-0 ma-0" style="min-height: 10vh;max-height: 45vh;overflow-y: auto;overflow-x: hidden">
-                        <div class="pa-1 ma-0">
-                            @switch (option.Name)
-                            {
-                                    case "Shadows": <!-- Shadows isn't something that gets customized often, hiding it for now -->
-@*                                     <div @onkeydown:preventDefault="true">
+                <div class="pa-0 ma-0" style="min-height: 10vh;max-height: 45vh;overflow-y: auto;overflow-x: hidden">
+                    <div class="pa-1 ma-0">
+                        @switch (option.Name)
+                        {
+                            case "Shadows":
+                                <!-- Shadows isn't something that gets customized often, hiding it for now -->
+                                @*                                     <div @onkeydown:preventDefault="true">
                                         <MudStack Class="pr-6 shadow-selector" Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween"
                                                   tabindex="0" @onkeydown="HandleShadowKeyPress">
                                             <MudText>@customShadows[currentShadowIndex].ToString()</MudText>
@@ -55,23 +56,23 @@ else
                                         </MudStack>
                                     </div>
                                     <MudTextField @bind-Value="@customShadows[currentShadowIndex].Default" Label="Shadow Value" /> *@
-                                    break;
-                                case "Layout Properties":
+                                break;
+                            case "Layout Properties":
                                 @foreach (CustomLayoutProperty layoutProp in customLayouts
-                                    .Where(x => !shouldFilter || x.Name.Contains(_searchString, StringComparison.OrdinalIgnoreCase)))
-                                    {
-                                        <div data-tooltip="@layoutProp.CssVariable">
-                                        <ThemeCreatorLayoutItem LayoutProp="@layoutProp" 
+                               .Where(x => !shouldFilter || x.Name.Contains(_searchString, StringComparison.OrdinalIgnoreCase)))
+                                {
+                                    <div class="tooltip-fit mud-width-full" data-tooltip="@layoutProp.CssVariable">
+                                        <ThemeCreatorLayoutItem LayoutProp="@layoutProp"
                                                                 LayoutPropChanged="@(async (int newSlider) => await LayoutPropertyChanged(layoutProp.Id, newSlider))" />
-                                        </div>
-                                    }
-                                    break;
-                                case "Typography":                                    
-                                    <ThemeCreatorSpinner SpinnerIndex="_typoValue" SpinnerIndexChanged="async (int newVal) => await SpinnerIndexChanged(newVal)" SpinnerList="@_typoList" />
-                                    @foreach (CustomTypography typo in customTypographies.Where(t => t.TypoType == _typoList[_typoValue] && t.DataType != "String[]").ToList())
-                                    {
-                                        var typoIndex = typo.Id;
-                                        <div data-tooltip="@typo.CssVariable">
+                                    </div>
+                                }
+                                break;
+                            case "Typography":
+                                <ThemeCreatorSpinner SpinnerIndex="_typoValue" SpinnerIndexChanged="async (int newVal) => await SpinnerIndexChanged(newVal)" SpinnerList="@_typoList" />
+                                @foreach (CustomTypography typo in customTypographies.Where(t => t.TypoType == _typoList[_typoValue] && t.DataType != "String[]").ToList())
+                                {
+                                    var typoIndex = typo.Id;
+                                    <div class="tooltip-fit mud-width-full" data-tooltip="@typo.CssVariable">
                                         @switch (typo.DataType)
                                         {
                                             case "Int32":
@@ -105,27 +106,27 @@ else
                                                 break;
                                         }
                                     </div>
-                                    }
+                                }
 
-                                    break;
-                                case "ZIndex":
+                                break;
+                            case "ZIndex":
                                 @foreach (CustomZIndex zIndex in customZIndexes.Where(x => !shouldFilter || x.Name.Contains(_searchString, StringComparison.OrdinalIgnoreCase)))
-                                    {
-                                <div data-tooltip="@zIndex.CssVariable">
-                                        <ThemeCreatorNumberItem T="int" Value="@(Convert.ToInt32(zIndex.Default))" 
+                                {
+                                    <div class="tooltip-large mud-width-full" data-tooltip="@zIndex.CssVariable">
+                                        <ThemeCreatorNumberItem T="int" Value="@(Convert.ToInt32(zIndex.Default))"
                                                                 ValueChanged="@(async (int newVal) => await NumberItemChanged(zIndex.Id, newVal, "zindex"))"
                                                                 Min="1000" Max="2000" Step="50" Name="@zIndex.Name" />
-                                                                </div>
-                                    }
-                                    break;
-                                default:
-                                    break;
-                            }
-                        </div>
-                    </div>        
-        </MudExpansionPanel>
-    }
-</MudExpansionPanels>
+                                    </div>
+                                }
+                                break;
+                            default:
+                                break;
+                        }
+                    </div>
+                </div>
+            </MudExpansionPanel>
+        }
+    </MudExpansionPanels>
 }
 @code {
     [Parameter] public int ThemeId { get; set; }
@@ -260,7 +261,7 @@ else
     {
         _isLoading = toLoad;
         await InvokeAsync(StateHasChanged);
-        await Task.Delay(1);        
+        await Task.Delay(1);
     }
 
     protected override async Task OnParametersSetAsync()
@@ -282,7 +283,7 @@ else
                 LoadSavedThemeData();
                 break;
         }
-        await Loading(false); 
+        await Loading(false);
     }
 
     private async Task LoadTheme(int themeId)
