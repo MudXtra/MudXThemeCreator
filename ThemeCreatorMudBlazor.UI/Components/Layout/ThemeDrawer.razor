@@ -56,7 +56,6 @@
     private string SelectedThemeOtherText => _themeState.ThemeOtherText.Length > 0 ?
                                             _themeState.ThemeOtherText :
                                             "Last known state of the theme you have been working with. Saves from session to session.";
-    private Breakpoint _breakpoint = Breakpoint.Md;
     protected override async Task OnInitializedAsync()
     {
         customThemes = await _themeService.GetCustomThemesAsync();

@@ -23,7 +23,7 @@ else
                    .OrderBy(x => x.OrderPriority)
                    .ThenBy(x => x.Id))
                         {
-                            <div class="mb-1">
+                            <div class="mb-1" data-tooltip="@themeSelection.CssVariable">
                             <ThemeCreatorColorItem @key="@(new Guid().ToString())" Name="@themeSelection.ThemeName" ToolTipText="@(ThemeSelectionTooltip(palette.Id))"
                                                        ColorChanged="@(async (MudColor newCol) => await ThemeColorChanged(themeSelection.Id, newCol, palette.Id))"
                                                        DefaultColor="@(palette.Id == 1 ? themeSelection.LightValueHex : themeSelection.DarkValueHex)" />
@@ -60,15 +60,18 @@ else
                                 @foreach (CustomLayoutProperty layoutProp in customLayouts
                                     .Where(x => !shouldFilter || x.Name.Contains(_searchString, StringComparison.OrdinalIgnoreCase)))
                                     {
-                                        <ThemeCreatorLayoutItem LayoutProp="@layoutProp"
+                                        <div data-tooltip="@layoutProp.CssVariable">
+                                        <ThemeCreatorLayoutItem LayoutProp="@layoutProp" 
                                                                 LayoutPropChanged="@(async (int newSlider) => await LayoutPropertyChanged(layoutProp.Id, newSlider))" />
+                                        </div>
                                     }
                                     break;
-                                case "Typography":
+                                case "Typography":                                    
                                     <ThemeCreatorSpinner SpinnerIndex="_typoValue" SpinnerIndexChanged="async (int newVal) => await SpinnerIndexChanged(newVal)" SpinnerList="@_typoList" />
                                     @foreach (CustomTypography typo in customTypographies.Where(t => t.TypoType == _typoList[_typoValue] && t.DataType != "String[]").ToList())
                                     {
                                         var typoIndex = typo.Id;
+                                        <div data-tooltip="@typo.CssVariable">
                                         @switch (typo.DataType)
                                         {
                                             case "Int32":
@@ -101,15 +104,18 @@ else
                                                 <MudText Typo="Typo.body2" Class="palette-text"><b>Unsupported DataType</b>: @typo.DataType</MudText>
                                                 break;
                                         }
+                                    </div>
                                     }
 
                                     break;
                                 case "ZIndex":
                                 @foreach (CustomZIndex zIndex in customZIndexes.Where(x => !shouldFilter || x.Name.Contains(_searchString, StringComparison.OrdinalIgnoreCase)))
                                     {
-                                        <ThemeCreatorNumberItem T="int" Value="@(Convert.ToInt32(zIndex.Default))"
+                                <div data-tooltip="@zIndex.CssVariable">
+                                        <ThemeCreatorNumberItem T="int" Value="@(Convert.ToInt32(zIndex.Default))" 
                                                                 ValueChanged="@(async (int newVal) => await NumberItemChanged(zIndex.Id, newVal, "zindex"))"
                                                                 Min="1000" Max="2000" Step="50" Name="@zIndex.Name" />
+                                                                </div>
                                     }
                                     break;
                                 default:
