@@ -1,9 +1,10 @@
-﻿@page "/Style"
+﻿@page "/style"
 @using MudBlazor.Utilities
 @inject StyleService styleService
 @inject IThemeCreatorService themeCreatorService
-
-<PageTitle>CSS Variable Style Lookup</PageTitle>
+<meta name="description" content="A page dedicated to polling the theme created for current variable valus var(--mud-palette-*)." />
+<meta property="og:description" content="A page dedicated to polling the theme created for current variable valus var(--mud-palette-*)." />
+<PageTitle>MudBlazor CSS Variable Style Lookup</PageTitle>
 <style>
     .mud-list-item-text > .mud-typography {
         white-space: nowrap; 

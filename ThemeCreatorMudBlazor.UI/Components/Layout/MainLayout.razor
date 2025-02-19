@@ -1,41 +1,43 @@
 ﻿@inherits LayoutComponentBase
 @inject IThemeStateService themeState
+@inject NavigationManager navManager
 
 <MudThemeProvider @bind-IsDarkMode="isDarkMode" />
 <MudDialogProvider BackdropClick="false" CloseOnEscapeKey="true" CloseButton="true" />
 <MudSnackbarProvider />
 <MudPopoverProvider />
 
+<h1 style="visibility: collapse;">@GetPageTitle()</h1>
 <MudLayout>
     <MudAppBar Elevation="4" Fixed="true" Dense="true">
         <MudIconButton Color="Color.Inherit" Icon="@Icons.Material.Outlined.Menu" Edge="Edge.Start"
-                       OnClick="@(() => _themeDrawer.ToggleDrawer())"/>
+        OnClick="@(() => _themeDrawer.ToggleDrawer())"/>
         <MudText Style="font-weight: bold;" Class="ml-3">MudBlazor Theme Creator</MudText>
         <MudSpacer/>
         <MudTooltip Text="Home">
-            <MudIconButton Href="/" Icon="@Icons.Material.Outlined.Home" Color="Color.Inherit"/>
+            <MudIconButton Href="/" UserAttributes="@(new Dictionary<string, object> { {"alt", "Home Page"} })" Icon="@Icons.Material.Outlined.Home" Color="Color.Inherit" />
         </MudTooltip>
         <MudTooltip Text="CSS Variable Lookup">
-            <MudIconButton Href="/Style" Icon="@Icons.Material.Outlined.Css" Color="Color.Inherit"/>
+            <MudIconButton Href="/style" Icon="@Icons.Material.Outlined.Css" Color="Color.Inherit" UserAttributes="@(new Dictionary<string, object> { {"alt", "CSS Style Page"} })" />
         </MudTooltip>
         <MudTooltip Text="Upload Bootstrap Theme">
-            <MudIconButton Href="/uploadcss" Icon="@Icons.Material.Outlined.CloudUpload" Color="Color.Inherit"/>
+            <MudIconButton Href="/uploadcss" Icon="@Icons.Material.Outlined.CloudUpload" Color="Color.Inherit" UserAttributes="@(new Dictionary<string, object> { {"alt", "Upload Bootswatch Page"} })"  />
         </MudTooltip>
         <MudTooltip Text="Export Theme">
-            <MudIconButton Href="/export" Icon="@Icons.Material.Outlined.ImportExport" Color="Color.Inherit"/>
+            <MudIconButton Href="/export" Icon="@Icons.Material.Outlined.ImportExport" Color="Color.Inherit" UserAttributes="@(new Dictionary<string, object> { {"alt", "Export Theme to CSS/C#/CS"} })" />
         </MudTooltip>
         <MudTooltip Text="About / Issues">
-            <MudIconButton Href="/about" Icon="@Icons.Material.Outlined.Info" Color="Color.Inherit"/>
+            <MudIconButton Href="/about" Icon="@Icons.Material.Outlined.Info" Color="Color.Inherit" UserAttributes="@(new Dictionary<string, object> { {"alt", "Known Issues/About Us Page"} })" />
         </MudTooltip>
         <MudTooltip Text="Toggle Dark/Light Mode">
             <MudIconButton id="darkToggle" OnClick="@(() => _themeDrawer.ToggleDark())"
-                           Icon="@(!isDarkMode ? Icons.Material.Outlined.WbSunny : Icons.Material.Outlined.NightsStay)"
-                           Color="Color.Inherit"/>
+            Icon="@(!isDarkMode ? Icons.Material.Outlined.WbSunny : Icons.Material.Outlined.NightsStay)"
+            Color="Color.Inherit"/>
         </MudTooltip>
     </MudAppBar>
     <ThemeDrawer @ref="_themeDrawer" @bind-IsDrawerOpen="isDrawerOpen"
-                 @bind-IsDarkMode="isDarkMode" @bind-IsDarkMode:after="DarkModeChanged"
-                 SelectedTheme="_themeId"/>
+    @bind-IsDarkMode="isDarkMode" @bind-IsDarkMode:after="DarkModeChanged"
+    SelectedTheme="_themeId"/>
     @if (!DoNotRenderForUnitTest)
     {
         <MudMainContent Class="mt-12 pa-4">
@@ -121,12 +123,25 @@
             CssChanged();
         }
     }
-    
+
     private void ChangeBreakPoint(Breakpoint arg)
     {
         _breakpoint = arg;
         Console.WriteLine($"Breakpoint: {arg}");
         isDrawerOpen = arg is not (Breakpoint.Xs or Breakpoint.Sm);
+    }
+
+    private string GetPageTitle()
+    {
+        var path = navManager?.Uri.ToLower();
+        return path switch
+        {
+            "https://themes.arctechonline.tech/about" => "About MudBlazor Theme Manager Creator / Known Issues",
+            "https://themes.arctechonline.tech/export" => "Export MudBlazor Theme",
+            "https://themes.arctechonline.tech/style" => "MudBlazor CSS Variable Style Lookup",
+            "https://themes.arctechonline.tech/uploadcss" => "MudBlazor Theme Manager Creator CSS Upload Section",
+            _ => "Welcome to MudBlazor Theme Manager Creator"
+        };
     }
 }
 <style>@themeDarkLightCSS</style>
