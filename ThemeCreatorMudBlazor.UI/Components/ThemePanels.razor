@@ -5,6 +5,7 @@
 <MudTextField T="string" Value="@_searchString" Immediate="true" ValueChanged="@SearchAllPanels"
               Placeholder="Search by name" Variant="Variant.Outlined" Class="mx-2 my-2"
               Typo="Typo.caption" Margin="Margin.Dense" Clearable DebounceInterval="150" />
+<AdComponent />
 @if (_isLoading)
 {
     <MudOverlay Visible="true" LightBackground="true" AutoClose="false" Absolute="true">
