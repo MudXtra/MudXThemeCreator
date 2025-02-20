@@ -1,6 +1,6 @@
-﻿@inject IThemeCreatorService _themeService
-@inject IThemeStateService _themeState
-@inject IDialogService _dialogService
+﻿@inject IThemeCreatorService ThemeService
+@inject IThemeStateService ThemeState
+@inject IDialogService DialogService
 
     <MudDrawer @bind-Open="IsDrawerOpen" ClipMode="DrawerClipMode.Docked" Width="300px"
                Elevation="2" Variant="DrawerVariant.Persistent">
@@ -11,7 +11,7 @@
                         @SelectedThemeName
                     </MudTooltip>
                 </MudSelectItem>
-                @foreach (CustomTheme customTheme in customThemes)
+                @foreach (CustomTheme customTheme in _customThemes)
                 {
                     <MudSelectItem T="int" Value="@customTheme.Id">
                         <MudTooltip Arrow="true" Placement="Placement.Right" Text="@customTheme.OtherText">
@@ -31,7 +31,7 @@
             </MudStack>
             <!-- div to take up remaining vh and allow scrolling -->
             <div style="overflow-y: auto; height: 85vh;">
-                <ThemePanels @ref="themePanelComponent" ThemeId="@SelectedTheme"/>
+                <ThemePanels @ref="_themePanelComponent" ThemeId="@SelectedTheme"/>
             </div>
         </div>
     </MudDrawer>
@@ -48,22 +48,22 @@
     [Parameter]
     public int SelectedTheme { get; set; } = 1;
 
-    ThemePanels themePanelComponent = default!;
-    private List<CustomTheme> customThemes = [];
-    private string SelectedThemeName => _themeState.ThemeName.Length > 0 ?
-                                            _themeState.ThemeName :
+    ThemePanels _themePanelComponent = default!;
+    private List<CustomTheme> _customThemes = [];
+    private string SelectedThemeName => ThemeState.ThemeName.Length > 0 ?
+                                            ThemeState.ThemeName :
                                             "Last Modified Theme";
-    private string SelectedThemeOtherText => _themeState.ThemeOtherText.Length > 0 ?
-                                            _themeState.ThemeOtherText :
+    private string SelectedThemeOtherText => ThemeState.ThemeOtherText.Length > 0 ?
+                                            ThemeState.ThemeOtherText :
                                             "Last known state of the theme you have been working with. Saves from session to session.";
     protected override async Task OnInitializedAsync()
     {
-        customThemes = await _themeService.GetCustomThemesAsync();
+        _customThemes = await ThemeService.GetCustomThemesAsync();
     }
 
     protected override async Task OnParametersSetAsync()
     {
-        customThemes = await _themeService.GetCustomThemesAsync();
+        _customThemes = await ThemeService.GetCustomThemesAsync();
         StateHasChanged();
     }
 
@@ -81,24 +81,23 @@
     {
         var parameters = new DialogParameters();
         var dialogOptions = new DialogOptions { CloseButton = false, CloseOnEscapeKey = false, BackdropClick = false };
-        var dialogRef = await _dialogService.ShowAsync<ConfirmDialog>("Reset Theme", parameters, dialogOptions);
+        var dialogRef = await DialogService.ShowAsync<ConfirmDialog>("Reset Theme", parameters, dialogOptions);
 
         var result = await dialogRef.Result;
-        bool confirmed = result != null && !result.Canceled && result?.Data != null && (bool)result.Data;
+        var confirmed = result is { Canceled: false, Data: true };
         if (confirmed)
         {
-            await _themeState.ResetTheme();
-            await themePanelComponent.ResetTheme();
+            await ThemeState.ResetTheme();
+            await _themePanelComponent.ResetTheme();
             StateHasChanged();
         }
-
     }
 
-    public async Task ToggleTheme(int themeId)
+    private async Task ToggleTheme(int themeId)
     {
         SelectedTheme = themeId;
         await Task.Delay(1);
         StateHasChanged();
-        await _themeState.UpdateThemeId(themeId, true, true);        
+        await ThemeState.UpdateThemeId(themeId, true, true);        
     }
 }

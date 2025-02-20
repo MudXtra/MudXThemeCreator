@@ -1,8 +1,8 @@
 ﻿@inherits LayoutComponentBase
-@inject IThemeStateService themeState
-@inject NavigationManager navManager
+@inject IThemeStateService ThemeState
+@inject NavigationManager NavManager
 
-<MudThemeProvider @bind-IsDarkMode="isDarkMode" />
+<MudThemeProvider @bind-IsDarkMode="_isDarkMode" />
 <MudDialogProvider BackdropClick="false" CloseOnEscapeKey="true" CloseButton="true" />
 <MudSnackbarProvider />
 <MudPopoverProvider />
@@ -11,7 +11,7 @@
 <MudLayout>
     <MudAppBar Elevation="4" Fixed="true" Dense="true">
         <MudIconButton Color="Color.Inherit" Icon="@Icons.Material.Outlined.Menu" Edge="Edge.Start"
-        OnClick="@(() => _themeDrawer.ToggleDrawer())"/>
+        OnClick="@(() => _themeDrawer!.ToggleDrawer())"/>
         <MudText Style="font-weight: bold;" Class="ml-3">MudBlazor Theme Creator</MudText>
         <MudSpacer/>
         <MudTooltip Text="Home">
@@ -30,13 +30,13 @@
             <MudIconButton Href="/about" Icon="@Icons.Material.Outlined.Info" Color="Color.Inherit" UserAttributes="@(new Dictionary<string, object> { {"alt", "Known Issues/About Us Page"} })" />
         </MudTooltip>
         <MudTooltip Text="Toggle Dark/Light Mode">
-            <MudIconButton id="darkToggle" OnClick="@(() => _themeDrawer.ToggleDark())"
-            Icon="@(!isDarkMode ? Icons.Material.Outlined.WbSunny : Icons.Material.Outlined.NightsStay)"
+            <MudIconButton id="darkToggle" OnClick="@(() => _themeDrawer!.ToggleDark())"
+            Icon="@(!_isDarkMode ? Icons.Material.Outlined.WbSunny : Icons.Material.Outlined.NightsStay)"
             Color="Color.Inherit"/>
         </MudTooltip>
     </MudAppBar>
-    <ThemeDrawer @ref="_themeDrawer" @bind-IsDrawerOpen="isDrawerOpen"
-    @bind-IsDarkMode="isDarkMode" @bind-IsDarkMode:after="DarkModeChanged"
+    <ThemeDrawer @ref="_themeDrawer" @bind-IsDrawerOpen="_isDrawerOpen"
+    @bind-IsDarkMode="_isDarkMode" @bind-IsDarkMode:after="DarkModeChanged"
     SelectedTheme="_themeId"/>
     @if (!DoNotRenderForUnitTest)
     {
@@ -58,45 +58,49 @@
 </MudLayout>
 
 @code {
-    private bool isDarkMode { get; set; } = false;
-    private bool isDrawerOpen { get; set; } = true;
-    private ThemeDrawer _themeDrawer { get; set; } = default!;
-    private string themeDarkLightCSS = string.Empty;
-    private string themeStaticCSS = string.Empty;
+    private bool _isDarkMode;
+    private bool _isDrawerOpen = true;
+    private ThemeDrawer? _themeDrawer;
+    private string _themeDarkLightCss = string.Empty;
+    private string _themeStaticCss = string.Empty;
     private int _themeId = 1;
     private Breakpoint _breakpoint = Breakpoint.Lg;
 
     [Parameter]
-    public bool DoNotRenderForUnitTest { get; set; } = false;
+    public bool DoNotRenderForUnitTest { get; set; }
 
     protected override void OnInitialized()
     {        
-        themeState.OnChange += CssChanged;
+        ThemeState.OnChange += OnCssChanged;
     }
 
-    private void Dispose()
+    private void OnCssChanged()
     {
-        themeState.OnChange -= CssChanged;
+        CssChanged(false);
+    }
+
+    public void Dispose()
+    {
+        ThemeState.OnChange -= OnCssChanged;
     }    
 
-    private void CssChanged()
+    private void CssChanged(bool updateState = false)
     {
-        bool updateState = false;
-        var tempStatic = themeState.GenerateStaticCSS();
-        var tempDarkLight = themeState.GenerateDarkLightCSS(isDarkMode);
-        if (tempStatic!= themeStaticCSS)
+        var tempStatic = ThemeState.GenerateStaticCSS();
+        var tempDarkLight = ThemeState.GenerateDarkLightCSS(_isDarkMode);
+        if (tempStatic != _themeStaticCss)
         {
-            themeStaticCSS = tempStatic;
+            _themeStaticCss = tempStatic;
             updateState = true;
         }
-        if (tempDarkLight != themeDarkLightCSS)
+        if (tempDarkLight != _themeDarkLightCss)
         {
-            themeDarkLightCSS = tempDarkLight;
+            _themeDarkLightCss = tempDarkLight;
             updateState = true;
         }
-        if (_themeId != themeState.ThemeId && themeState.ThemeId != 0)
+        if (_themeId != ThemeState.ThemeId && ThemeState.ThemeId != 0)
         {
-            _themeId = themeState.ThemeId;
+            _themeId = ThemeState.ThemeId;
             updateState = true;
         }
         if (updateState)
@@ -110,17 +114,17 @@
         CssChanged();
     }
 
-    protected async override Task OnAfterRenderAsync(bool firstRender)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
             // make sure theme state is initialized
-            if (!themeState.IsInitialized)
+            if (!ThemeState.IsInitialized)
             {
-                await themeState.Initialize();
+                await ThemeState.Initialize();
             }
-            _themeId = themeState.ThemeId;
-            CssChanged();
+            _themeId = ThemeState.ThemeId;
+            CssChanged(true);
         }
     }
 
@@ -128,12 +132,12 @@
     {
         _breakpoint = arg;
         Console.WriteLine($"Breakpoint: {arg}");
-        isDrawerOpen = arg is not (Breakpoint.Xs or Breakpoint.Sm);
+        _isDrawerOpen = arg is not (Breakpoint.Xs or Breakpoint.Sm);
     }
 
     private string GetPageTitle()
     {
-        var path = navManager?.Uri.ToLower();
+        var path = NavManager?.Uri.ToLower();
         return path switch
         {
             "https://themes.arctechonline.tech/about" => "About MudBlazor Theme Manager Creator / Known Issues",
@@ -144,5 +148,5 @@
         };
     }
 }
-<style>@themeDarkLightCSS</style>
-<style>@themeStaticCSS</style>
+<style>@_themeDarkLightCss</style>
+<style>@_themeStaticCss</style>
