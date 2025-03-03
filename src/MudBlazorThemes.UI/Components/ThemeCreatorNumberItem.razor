@@ -1,0 +1,38 @@
+@typeparam T where T : struct
+
+<MudOverlay @bind-Visible="_isOpen" AutoClose="true" />
+
+<div class="mud-list-item-clickable mud-ripple pr-4 py-3" @onclick="ToggleOpen">
+    <MudStack Row AlignItems="AlignItems.Center" Class="pl-0 ml-0">
+        <MudText Typo="Typo.body2" Class="left-text">@Name</MudText>
+        <MudText Typo="Typo.subtitle2" Class="mud-disabled">@Value</MudText>
+    </MudStack>
+</div>
+
+<MudPopover Open="@_isOpen" AnchorOrigin="Origin.CenterRight" TransformOrigin="Origin.BottomLeft" OverflowBehavior="OverflowBehavior.FlipAlways">
+    @if (_hasBeenOpened)
+    {
+        <MudCard Elevation="2" Style="width: 300px;">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">Edit @Name</MudText>
+                </CardHeaderContent>
+                <CardHeaderActions>
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="@ToggleOpen" />
+                </CardHeaderActions>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudContainer Style="width: 75%;">
+                    <MudNumericField T="@T" @bind-Value="origValue" Class="centered-input" Immediate="true"
+                                     Min="@Min" Max="@Max" Step="@Step" Underline="false" />
+                </MudContainer>
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="@ToggleOpen">Cancel</MudButton>
+                <MudSpacer />
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@IsDisabled()" OnClick="@UpdateNumber">Save</MudButton>
+            </MudCardActions>
+        </MudCard>
+    }
+
+</MudPopover>

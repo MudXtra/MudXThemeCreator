@@ -1,0 +1,14 @@
+@inject NavigationManager Navigation
+
+<AuthorizeView>
+    <Authorized>
+        <MudTooltip Text="Logout">
+            <MudIconButton Icon="@Icons.Material.Outlined.VpnKeyOff" Class="mx-2" Variant="Variant.Filled" Href="Account/Logout" Color="Color.Info" />
+        </MudTooltip>       
+    </Authorized>
+    <NotAuthorized>
+        <MudTooltip Text="Login">
+            <MudIconButton Icon="@Icons.Material.Outlined.VpnKey" Class="mx-2" Variant="Variant.Filled" Href="Account/Login" Color="Color.Info" />
+        </MudTooltip>
+    </NotAuthorized>
+</AuthorizeView>

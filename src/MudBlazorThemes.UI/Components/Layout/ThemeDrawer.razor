@@ -1,0 +1,135 @@
+@using System.Security.Claims
+@inject IThemeCreatorService ThemeService
+@inject IThemeStateService ThemeState
+@inject IDialogService _dialogService
+
+<MudDrawer @bind-Open="IsDrawerOpen" ClipMode="DrawerClipMode.Docked" Width="300px"
+Elevation="2" Variant="DrawerVariant.Persistent">
+    <div class="ml-2 mt-2 mb-2" style="text-align: center;">
+        <MudSelect Value="@ThemeState.ThemeId" ValueChanged="@((int i) => LoadTheme(i))" Label="AVAILABLE THEMES">
+            <AuthorizeView Roles="SuperUser">
+                <Authorized>
+                    @foreach (var customTheme in ThemeState.CustomThemes)
+                    {
+                        <MudSelectItem @key="@customTheme.Id" Value="@customTheme.Id">
+                            <MudTooltip Arrow="true" Placement="Placement.Right" Text="@customTheme.OtherText">
+                                @($"{(!customTheme.IsApproved ? "*" : "")}{(customTheme.Id == ThemeState.ThemeId && ThemeState.IsModified ? "(Modified) " : "")}{customTheme.Name}")
+                            </MudTooltip>
+                        </MudSelectItem>
+                    }
+                </Authorized>
+                <NotAuthorized>
+                    @foreach (var customTheme in ThemeState.CustomThemes.Where(x => x.IsApproved || x.UploadedBy == UserName))
+                    {
+                        <MudSelectItem @key="@customTheme.Id" Value="@customTheme.Id">
+                            <MudTooltip Arrow="true" Placement="Placement.Right" Text="@customTheme.OtherText">
+                                @($"{(!customTheme.IsApproved ? "*" : "")}{(customTheme.Id == ThemeState.ThemeId && ThemeState.IsModified ? "(Modified) " : "")}{customTheme.Name}")
+                            </MudTooltip>
+                        </MudSelectItem>
+                    }
+                </NotAuthorized>
+            </AuthorizeView>
+        </MudSelect>
+        <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+            <MudButton OnClick="@(() => ToggleDark())" Class="mt-2"
+            StartIcon="@(!IsDarkMode ? Icons.Material.Outlined.WbSunny : Icons.Material.Outlined.NightsStay)">
+                @(!IsDarkMode ? "Light Mode" : "Dark Mode")
+            </MudButton>
+            <MudTooltip Text="Reset All Theme Values">
+                <MudButton Class="mt-2" StartIcon="@Icons.Material.Outlined.Refresh" OnClick="@ResetTheme" />
+            </MudTooltip>
+        </MudStack> <!--  -->
+        <MudTextField T="string" Value="@_searchString" ValueChanged="@SearchAllPanels" 
+        Placeholder="Search by name" Variant="Variant.Outlined" Class="mx-2 my-2"
+        Typo="Typo.caption" Margin="Margin.Dense" Clearable DebounceInterval="250" />
+        @* <AdComponent /> *@
+        <!-- div to take up remaining vh and allow scrolling -->
+        <div style="overflow-y: auto; height: 80vh;">
+            <ThemePanels @ref="_themePanelComponent" @key="@_keyId" SearchString="@_searchString"/>
+        </div>
+    </div>
+</MudDrawer>
+<!-- TODO: https://shadcn.com/ -->
+@code { 
+    [CascadingParameter(Name = "UserName")]
+    public string UserName { get; set; } = string.Empty;
+
+    [Parameter]
+    public bool IsDarkMode { get; set; }
+    [Parameter]
+    public EventCallback<bool> IsDarkModeChanged { get; set; }
+    [Parameter]
+    public bool IsDrawerOpen { get; set; }
+    [Parameter]
+    public EventCallback<bool> IsDrawerOpenChanged { get; set; }
+
+    private string _searchString = string.Empty;
+    private ThemePanels _themePanelComponent = default!;
+    private int _keyId = 0;
+
+    protected override void OnParametersSet()
+    {
+        StateHasChanged();
+    }
+
+    public async Task ToggleDark()
+    {
+        await IsDarkModeChanged.InvokeAsync(!IsDarkMode);
+    }
+
+    public async Task ToggleDrawer()
+    {
+        await IsDrawerOpenChanged.InvokeAsync(!IsDrawerOpen);
+    }
+
+    private async Task ResetTheme()
+    {
+        var parameters = new DialogParameters();
+        var dialogOptions = new DialogOptions { CloseButton = false, CloseOnEscapeKey = false, BackdropClick = false };
+        var dialogRef = await _dialogService.ShowAsync<ConfirmDialog>("Reset Theme", parameters, dialogOptions);
+
+        var result = await dialogRef.Result;
+        bool confirmed = result != null && !result.Canceled && result?.Data != null && (bool)result.Data;
+        if (confirmed)
+        {
+            await ThemeState.ResetTheme();
+            await _themePanelComponent.LoadDefaultThemeValues();
+            await LoadTheme(ThemeState.ThemeId);
+            StateHasChanged();
+            _keyId++;
+        }
+    }
+
+    private void SearchAllPanels(string val)
+    {
+        _themePanelComponent?.SearchAllPanels(val);
+        _searchString = val;
+    }
+
+    // should only trigger when dropdown on themeDrawer is changed, should never trigger outside of that.
+    public async Task LoadTheme(int themeId)
+    {
+        // loading all the defaults for the selected theme
+        var newThemeSelections = await ThemeService.GetThemeSelectionsAsync(themeId);
+        await ThemeState.UpdateThemeData(newThemeSelections, false);
+        var newCustomShadows = await ThemeService.GetCustomShadowsAsync(themeId);
+        await ThemeState.UpdateThemeData(newCustomShadows, false);
+        var newCustomLayouts = await ThemeService.GetCustomLayoutsAsync(themeId);
+        await ThemeState.UpdateThemeData(newCustomLayouts, false);
+        var newCustomTypographies = await ThemeService.GetCustomTypographiesAsync(themeId);
+        await ThemeState.UpdateThemeData(newCustomTypographies, false);
+        var newCustomZIndexes = await ThemeService.GetCustomZIndexesAsync(themeId);
+        await ThemeState.UpdateThemeData(newCustomZIndexes, false);
+        // updating ThemeId and triggering a state change reflecting the new theme
+        await ThemeState.UpdateThemeId(themeId, false, true);
+        var ct = await ThemeService.GetCustomThemesAsync();
+        var theme = ct.FirstOrDefault(x => x.Id == themeId);
+        // update ThemeName and ThemeOther
+        if (theme != null)
+        {
+            ThemeState.ThemeName = theme.Name;
+            ThemeState.ThemeOtherText = theme.OtherText;
+            ThemeState.IsModified = false;
+        }
+    }
+}
