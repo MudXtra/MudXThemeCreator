@@ -1,4 +1,4 @@
-@page "/uploadcss"
+@page "/upload"
 @using System.Security.Cryptography
 @using System.Text
 @using System.Diagnostics
@@ -14,25 +14,25 @@
 <MudText Typo="Typo.h3">CSS Upload Section</MudText>
 <br />
 <MudText Typo="Typo.body1">
-    Welcome @(UserName), please upload a Bootstrap CSS file or a CS theme file no larger than 1MB here to create a potential new theme or save a theme to your account.
+    Welcome<b>@($" {UserName}")</b>,<br />Please upload a Bootswatch CSS file or a MudBlazor CS theme file no larger than 1MB here to create a potential new theme or save a theme to your account.
 </MudText>
 <br />
 
 <MudFileUpload T="IBrowserFile" FilesChanged="UploadFile" Required Accept="@string.Join(",", AllowedExtensions)">
     <ActivatorContent>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!_uploadReady)" StartIcon="@Icons.Material.Filled.CloudUpload">Upload Text File</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.CloudUpload">Upload Text File</MudButton>
     </ActivatorContent>
 </MudFileUpload>
 
-<MudText>
-    Bootswatch uploading is not perfect, Very little typography and layout property information is gathered and Zindex is complete ignored.
+<MudText Class="mt-4">
+    Bootswatch uploading is not perfect, Very little typography and layout property information is gathered and Zindex is complete ignored. <br/>
     Not all themes are compatible, the uploader accepts version 7.xx MudBlazor Themes and 8.xx MudBlazor Themes. It will only pick up the first theme in a multi theme file.
 </MudText>
 <br />
 <AuthorizeView>
     <Authorized>
-        <MudForm @bind-IsValid="@_success">
-            <MudCard>
+        <MudForm @ref="_saveForm" @bind-IsValid="@_success">
+            <MudCard Style="max-width: 800px;">
                 <MudCardHeader>
                     <CardHeaderContent>
                         <MudText Typo="Typo.h6">Save Theme</MudText>
@@ -41,18 +41,28 @@
                         @* <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Default" /> *@
                     </CardHeaderActions>
                 </MudCardHeader>
-                <MudCardContent>
-                    <MudText>Save your theme to the database for later use.</MudText>
-                    <MudText class="mb-2" Typo="Typo.body2">
+                <MudCardContent Class="mt-n4">
+                    <MudText>Save this theme to the database for later use.</MudText>
+                    <MudText class="mb-4" Typo="Typo.body2" HtmlTag="p">
                         By default saved themes are only available to the account they are saved to. At site owner discression
-                        it may be activated for full use. You can create an issue on GitHub if you would like this to happen sooner.
+                        it may be activated for public use. You can create an issue on GitHub if you would like this to happen sooner.
+                        If the current theme has not been modified it cannot be saved.
                     </MudText>
-                    <MudText>Theme ID: <b>@_themeId</b></MudText>
+                    <MudText>Theme ID: <b>@_themeId@if (_isModified)
+                            {
+                                <sup style="color: red; font-weight: bolder;" data-tooltip="Modified">*&nbsp;</sup>
+                            }</b>
+                    </MudText>
                     <MudTextField Label="Theme Name" @bind-Value="_themeName" Required Validation="@(MaxLengthNameValidation)" HelperText="5-30 Characters" />
                     <MudTextField AutoGrow Class="mb-2" Label="Theme Other Text" HelperText="5-175 Characters" @bind-Value="_themeOtherText" Required Validation="@(MaxLengthOtherValidation)" />
                 </MudCardContent>
                 <MudCardActions>
-                    <MudButton Variant="Variant.Text" Color="Color.Primary" Disabled="@(!_success || !_uploadReady)" OnClick="SaveTheme">Save Theme</MudButton>
+                    <MudTooltip Text="Saving a theme will create a new theme for your account unless you are the owner. You can only have 5 themes per account.">
+                        <MudButton Variant="Variant.Text" Color="Color.Primary" Disabled="@(!_success || !themeState.IsModified)" OnClick="SaveTheme">
+                            Save Theme
+                        </MudButton>
+                        <sup class="ml-n2" style="color: red; font-weight: bolder;">*&nbsp;</sup>
+                    </MudTooltip>
                 </MudCardActions>
             </MudCard>
         </MudForm>
@@ -72,24 +82,45 @@
     private bool _approved;
     private bool _disabledApprove = true;
     private bool _success;
-    private bool _uploadReady;
-    private bool _saveReady;
     private string _themeName = string.Empty;
     private string _themeOtherText = string.Empty;
     private int _themeId;
+    private bool _isModified;
+    private MudForm? _saveForm;
 
     [CascadingParameter(Name = "UserName")]
     public string UserName { get; set; } = string.Empty;
+
+    [CascadingParameter(Name = "SuperUser")]
+    public bool SuperUser { get; set; }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        themeState.OnChange += ModifiedChanged;
+    }
 
     protected override void OnAfterRender(bool firstRender)
     {
         base.OnAfterRender(firstRender);
         if (firstRender)
         {
-            _themeName = themeState.ThemeName;
-            _themeOtherText = themeState.ThemeOtherText;
-            _themeId = themeState.ThemeId;
+            UpdateTheme();            
         }
+        if (_themeId != themeState.ThemeId)
+        {
+            UpdateTheme();
+        }
+        _saveForm?.Validate();
+    }
+
+    private void UpdateTheme()
+    {
+        _themeName = themeState.ThemeName;
+        _themeOtherText = themeState.ThemeOtherText;
+        _themeId = themeState.ThemeId;
+        _isModified = themeState.IsModified;
+        StateHasChanged();
     }
 
     private void ApproveChanged(bool val)
@@ -157,7 +188,8 @@
             if (fileContent.Length > 0)
             {
                 ShowNotification("File loaded successfully, processing...", Severity.Success);
-                (string themeName, string otherText, List<ThemeSelection> themeSelections, List<CustomShadow> customShadows, List<CustomLayoutProperty> customLayoutProperties, List<CustomTypography> customTypographies, List<CustomZIndex> customZIndices)
+                (string themeName, string otherText, List<ThemeSelection> themeSelections, List<CustomShadow> customShadows,
+                    List<CustomLayoutProperty> customLayoutProperties, List<CustomTypography> customTypographies, List<CustomZIndex> customZIndices)
                     themeStatus = await themeService.ImportBootswatchTheme(fileContent);
                 await themeState.ResetTheme();
                 await themeState.UpdateThemeData(themeStatus.themeSelections, true, true);
@@ -167,7 +199,7 @@
                 await themeState.UpdateThemeData(themeStatus.customZIndices, true, true);
                 themeState.ThemeName = themeStatus.themeName;
                 themeState.ThemeOtherText = themeStatus.otherText;
-                await themeState.UpdateThemeId(0);
+                themeState.IsModified = true;                
                 themeState.CustomThemes.Add(
                     new CustomTheme
                     {
@@ -178,8 +210,9 @@
                          OtherText = string.IsNullOrWhiteSpace(themeStatus.otherText) ? "*Uploaded Theme" : themeStatus.otherText,
                          UploadedBy = UserName
                     });
+                await themeState.UpdateThemeId(0,true,true);
+                _saveForm?.Validate();
                 ShowNotification($"{themeStatus.themeName} imported successfully, don't forget to save it!", Severity.Success);
-                _uploadReady = true;
             }
             else
             {
@@ -197,6 +230,7 @@
         var result = await themeService.SaveTheme(themeState);
         if (result)
         {
+            themeState.CustomThemes = await themeService.GetCustomThemesAsync();
             await themeState.UpdateThemeId(themeState.ThemeId, true, true);
             Snackbar.Add("Theme Saved Successfully", Severity.Success);
         }
@@ -209,5 +243,18 @@
     private void ShowNotification(string message, Severity severity)
     {
         Snackbar.Add(message, severity);
+    }
+
+    private void ModifiedChanged()
+    {
+        _themeId = themeState.ThemeId;
+        _isModified = themeState.IsModified;
+        StateHasChanged();
+        _saveForm?.Validate();
+    }
+
+    private void Dispose()
+    {
+        themeState.OnChange -= ModifiedChanged;
     }
 }

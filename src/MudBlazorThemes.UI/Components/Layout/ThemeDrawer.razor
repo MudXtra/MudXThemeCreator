@@ -2,34 +2,45 @@
 @inject IThemeCreatorService ThemeService
 @inject IThemeStateService ThemeState
 @inject IDialogService _dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar Snackbar
+@inject ILogger<MainLayout> LogService
 
 <MudDrawer @bind-Open="IsDrawerOpen" ClipMode="DrawerClipMode.Docked" Width="300px"
 Elevation="2" Variant="DrawerVariant.Persistent">
     <div class="ml-2 mt-2 mb-2" style="text-align: center;">
-        <MudSelect Value="@ThemeState.ThemeId" ValueChanged="@((int i) => LoadTheme(i))" Label="AVAILABLE THEMES">
-            <AuthorizeView Roles="SuperUser">
-                <Authorized>
-                    @foreach (var customTheme in ThemeState.CustomThemes)
-                    {
-                        <MudSelectItem @key="@customTheme.Id" Value="@customTheme.Id">
-                            <MudTooltip Arrow="true" Placement="Placement.Right" Text="@customTheme.OtherText">
-                                @($"{(!customTheme.IsApproved ? "*" : "")}{(customTheme.Id == ThemeState.ThemeId && ThemeState.IsModified ? "(Modified) " : "")}{customTheme.Name}")
-                            </MudTooltip>
-                        </MudSelectItem>
-                    }
-                </Authorized>
-                <NotAuthorized>
-                    @foreach (var customTheme in ThemeState.CustomThemes.Where(x => x.IsApproved || x.UploadedBy == UserName))
-                    {
-                        <MudSelectItem @key="@customTheme.Id" Value="@customTheme.Id">
-                            <MudTooltip Arrow="true" Placement="Placement.Right" Text="@customTheme.OtherText">
-                                @($"{(!customTheme.IsApproved ? "*" : "")}{(customTheme.Id == ThemeState.ThemeId && ThemeState.IsModified ? "(Modified) " : "")}{customTheme.Name}")
-                            </MudTooltip>
-                        </MudSelectItem>
-                    }
-                </NotAuthorized>
-            </AuthorizeView>
-        </MudSelect>
+        @if (_selectKey == 0)
+        {
+            <MudSkeleton Width="100%" />
+            <MudSkeleton Width="100%" />
+        }
+        else
+        {
+            <MudSelect @key="_selectKey" @bind-Value="@_themeId" @bind-Value:after="@(() => LoadTheme(_themeId))" Label="AVAILABLE THEMES">
+                <AuthorizeView Roles="SuperUser">
+                    <Authorized>
+                        @foreach (var customTheme in _customThemes)
+                        {
+                            <MudSelectItem @key="@customTheme.Id" Value="@customTheme.Id">
+                                <MudTooltip Arrow="true" Placement="Placement.Right" Text="@customTheme.OtherText">
+                                    @($"{(!customTheme.IsApproved ? "*" : "")}{(customTheme.Id == _themeId && ThemeState.IsModified ? "(Modified) " : "")}{customTheme.Name}")
+                                </MudTooltip>
+                            </MudSelectItem>
+                        }
+                    </Authorized>
+                    <NotAuthorized>
+                        @foreach (var customTheme in _customThemes.Where(x => x.IsApproved || x.UploadedBy == UserName))
+                        {
+                            <MudSelectItem @key="@customTheme.Id" Value="@customTheme.Id">
+                                <MudTooltip Arrow="true" Placement="Placement.Right" Text="@customTheme.OtherText">
+                                    @($"{(!customTheme.IsApproved ? "*" : "")}{(customTheme.Id == _themeId && ThemeState.IsModified ? "(Modified) " : "")}{customTheme.Name}")
+                                </MudTooltip>
+                            </MudSelectItem>
+                        }
+                    </NotAuthorized>
+                </AuthorizeView>
+            </MudSelect>
+        }
         <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
             <MudButton OnClick="@(() => ToggleDark())" Class="mt-2"
             StartIcon="@(!IsDarkMode ? Icons.Material.Outlined.WbSunny : Icons.Material.Outlined.NightsStay)">
@@ -50,7 +61,7 @@ Elevation="2" Variant="DrawerVariant.Persistent">
     </div>
 </MudDrawer>
 <!-- TODO: https://shadcn.com/ -->
-@code { 
+@code {
     [CascadingParameter(Name = "UserName")]
     public string UserName { get; set; } = string.Empty;
 
@@ -65,11 +76,32 @@ Elevation="2" Variant="DrawerVariant.Persistent">
 
     private string _searchString = string.Empty;
     private ThemePanels _themePanelComponent = default!;
-    private int _keyId = 0;
+    private int _selectKey;
+    private int _keyId;
+
+    private List<CustomTheme> _customThemes = [];
+    private int _themeId;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        ThemeState.OnChange += ThemeChanged;
+    }
 
     protected override void OnParametersSet()
     {
         StateHasChanged();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+        if (firstRender)
+        {
+            ThemeChanged();
+            _selectKey++;
+            StateHasChanged();
+        }            
     }
 
     public async Task ToggleDark()
@@ -92,11 +124,21 @@ Elevation="2" Variant="DrawerVariant.Persistent">
         bool confirmed = result != null && !result.Canceled && result?.Data != null && (bool)result.Data;
         if (confirmed)
         {
+            try
+            {
+                ThemeState.CustomThemes = await ThemeService.GetCustomThemesAsync();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add("Failed to Load Themes, please reload the page.", Severity.Error);
+                LogService.LogError(ex.Message, ex.StackTrace);
+            }
             await ThemeState.ResetTheme();
-            await _themePanelComponent.LoadDefaultThemeValues();
-            await LoadTheme(ThemeState.ThemeId);
+            await LoadTheme(_themeId);
+            ThemeChanged();
+            _keyId++;            
+            NavManager.NavigateTo("/");
             StateHasChanged();
-            _keyId++;
         }
     }
 
@@ -131,5 +173,18 @@ Elevation="2" Variant="DrawerVariant.Persistent">
             ThemeState.ThemeOtherText = theme.OtherText;
             ThemeState.IsModified = false;
         }
+    }
+
+    private void ThemeChanged()
+    {
+        _customThemes = ThemeState.CustomThemes;
+        _themeId = ThemeState.ThemeId;        
+        _selectKey++;
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        ThemeState.OnChange -= ThemeChanged;
     }
 }

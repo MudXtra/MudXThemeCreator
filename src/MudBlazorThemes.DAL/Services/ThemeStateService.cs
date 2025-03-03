@@ -43,7 +43,7 @@ namespace MudBlazorThemes.DAL.Services
         public async Task UpdateThemeId(int themeId, bool saveState = true, bool notifyChanged = false)
         {
             ThemeId = themeId;
-            if (themeId > 0)
+            if (themeId >= 0)
             {
                 ThemeName = CustomThemes.FirstOrDefault(x => x.Id == themeId)?.Name ?? string.Empty;
                 ThemeOtherText = CustomThemes.FirstOrDefault(x => x.Id == themeId)?.OtherText ?? string.Empty;
@@ -130,8 +130,9 @@ namespace MudBlazorThemes.DAL.Services
             await _localService.RemoveItemAsync("selectedTypographies");
             await _localService.RemoveItemAsync("selectedZIndexes");
             IsModified = false;
-            ThemeName = string.Empty;
-            ThemeOtherText = string.Empty;
+            ThemeId = 1;
+            ThemeName = CustomThemes.FirstOrDefault(x => x.Id == 1)?.Name ?? string.Empty;
+            ThemeOtherText = CustomThemes.FirstOrDefault(x => x.Id == 1)?.OtherText ?? string.Empty;
             NotifyStateChanged();
         }
 
@@ -144,8 +145,11 @@ namespace MudBlazorThemes.DAL.Services
             // if no theme found set it to 1
             if (ThemeId == 0)
             {
-                ThemeId = -1;
+                ThemeId = 1;
+                ThemeName = CustomThemes.FirstOrDefault(x => x.Id == 1)?.Name ?? string.Empty;
+                ThemeOtherText = CustomThemes.FirstOrDefault(x => x.Id == 1)?.OtherText ?? string.Empty;
                 // no need to try the rest
+                NotifyStateChanged();
                 return;
             }
             SelectedThemes = await _localService.GetItemAsync<List<ThemeSelection>>("selectedThemes") ?? [];
@@ -153,6 +157,7 @@ namespace MudBlazorThemes.DAL.Services
             SelectedLayouts = await _localService.GetItemAsync<List<CustomLayoutProperty>>("selectedLayouts") ?? [];
             SelectedTypographies = await _localService.GetItemAsync<List<CustomTypography>>("selectedTypographies") ?? [];
             SelectedZIndexes = await _localService.GetItemAsync<List<CustomZIndex>>("selectedZIndexes") ?? [];
+            NotifyStateChanged();
         }
 
         /// <summary>

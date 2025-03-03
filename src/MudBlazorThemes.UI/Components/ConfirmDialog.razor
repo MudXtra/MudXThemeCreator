@@ -1,4 +1,4 @@
-<MudDialog>
+<MudDialog DefaultFocus="DefaultFocus.FirstChild">
     <DialogContent>
         Are you sure? This cannot be undone!<br />Please type the word <b>Confirm</b> to continue.
         <MudTextField @ref=_confirmField Class="confirm_field" Immediate="true" @bind-Value="_confirmString" Variant="Variant.Filled" Margin="Margin.Dense" OnKeyDown="@CheckIfEnter" />
@@ -27,14 +27,6 @@
     private void OnConfirm() => MudDialog.Close(DialogResult.Ok(_isConfirmValid));
 
     private void OnCancel() => MudDialog.Close(DialogResult.Ok(false));
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            await _confirmField.FocusAsync();
-        }        
-    }
 
     private void CheckIfEnter(KeyboardEventArgs args)
     {

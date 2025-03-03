@@ -261,7 +261,7 @@ namespace MudBlazorThemes.DAL.Services
                     IsActive = true,
                     IsApproved = true,
                     Name = _themeState.ThemeName,
-                    CreatedWhen = DateTime.Now,
+                    CreatedWhen = DateTime.Now.ToUniversalTime(),
                     OtherText = _themeState.ThemeOtherText
                 };
 
