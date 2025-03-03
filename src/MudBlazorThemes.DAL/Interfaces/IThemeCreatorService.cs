@@ -15,6 +15,7 @@ namespace MudBlazorThemes.DAL.Interfaces
         public Task<List<CustomTypography>> GetCustomTypographiesAsync(int themeId);
         public Task<List<CustomZIndex>> GetCustomZIndexesAsync(int themeId);
         public Task<(string themeName, string otherText, List<ThemeSelection> themeSelections, List<CustomShadow> customShadows, List<CustomLayoutProperty> customLayoutProperties, List<CustomTypography> customTypographies, List<CustomZIndex> customZIndices)> ImportBootswatchTheme(string cssContent, int mappedThemeId = 1);
-        public Task<bool> SaveTheme(IThemeStateService _themeState);
+        public Task<bool> UpdateTheme(IThemeStateService _themeState)
+        public Task<int> SaveTheme(IThemeStateService _themeState);
     }
 }

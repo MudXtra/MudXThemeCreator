@@ -228,10 +228,11 @@
     private async Task SaveTheme()
     {
         var result = await themeService.SaveTheme(themeState);
-        if (result)
+        if (result > 0)
         {
             themeState.CustomThemes = await themeService.GetCustomThemesAsync();
-            await themeState.UpdateThemeId(themeState.ThemeId, true, true);
+            await themeState.ResetTheme();
+            await themeState.UpdateThemeId(result, false, true);
             Snackbar.Add("Theme Saved Successfully", Severity.Success);
         }
         else
@@ -249,6 +250,10 @@
     {
         _themeId = themeState.ThemeId;
         _isModified = themeState.IsModified;
+        if (string.IsNullOrWhiteSpace(_themeName))
+            _themeName = themeState.ThemeName;
+        if (string.IsNullOrWhiteSpace(_themeOtherText))
+            _themeOtherText = themeState.ThemeName;
         StateHasChanged();
         _saveForm?.Validate();
     }
