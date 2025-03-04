@@ -104,5 +104,6 @@ namespace MudBlazorThemes.DAL.Data
         public DbSet<CustomZIndex> CustomZIndexes { get; set; }
         public DbSet<MappedTheme> MappedThemes { get; set; }
         public DbSet<MappedCssVariables> MappedCssVariables { get; set; }
+        public DbSet<UserMax> UserMaxes { get; set; }
     }
 }

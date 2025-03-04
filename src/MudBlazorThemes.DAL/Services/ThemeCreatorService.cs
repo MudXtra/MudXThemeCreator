@@ -9,6 +9,25 @@ namespace MudBlazorThemes.DAL.Services
     public class ThemeCreatorService : IThemeCreatorService
     {
         private readonly IDbContextFactory<ThemeDbContext> _dbContextFactory;
+
+        private int _maxThemes = 0;
+        public int MaxThemes(string userName)
+        {
+            if (_maxThemes == 0)
+            {
+                using var context = _dbContextFactory.CreateDbContext();
+                var userMax = context.UserMaxes.FirstOrDefault(x => x.UserName == userName);
+                if (userMax == null)
+                {
+                    userMax = new UserMax { UserName = userName, MaxThemes = 5 };
+                    context.UserMaxes.Add(userMax);
+                    context.SaveChanges();
+                }
+                _maxThemes = userMax.MaxThemes;
+            }
+            return _maxThemes;
+        }
+
         public ThemeCreatorService(IDbContextFactory<ThemeDbContext> dbContextFactory)
         {
             _dbContextFactory = dbContextFactory;
@@ -37,17 +56,10 @@ namespace MudBlazorThemes.DAL.Services
             using var context = await _dbContextFactory.CreateDbContextAsync();
 
             return await context.CustomThemes
-                .Where(x => x.IsActive && x.IsApproved)
+                .Where(x => x.IsActive)
                 .OrderBy(x => x.Id == 1 ? 0 : 1) // Default theme first
                 .ThenBy(x => x.Name) // Alphabetically for the rest
                 .ToListAsync();
-        }
-
-        public async Task<bool> GetApprovedThemeAsync(int themeId)
-        {
-            using var context = await _dbContextFactory.CreateDbContextAsync();
-
-            return await context.CustomThemes.AnyAsync(x => x.Id == themeId && x.IsApproved);
         }
 
         public async Task<bool> UpdateApprovedThemeAsync(int themeId, bool approval)
@@ -248,266 +260,169 @@ namespace MudBlazorThemes.DAL.Services
             return variables;
         }
 
-        public async Task<bool> UpdateTheme(IThemeStateService _themeState)
+        public async Task<IThemeStateService> ImportMudBlazorTheme(string csContent, IThemeStateService themeState)
         {
-            using var context = await _dbContextFactory.CreateDbContextAsync();
-
-            var customTheme = context.CustomThemes.FirstOrDefault(x => x.Id == _themeState.ThemeId);
-            if (customTheme is null)
-                return false;
-
-            using var transaction = await context.Database.BeginTransactionAsync();
-            var customThemeId = customTheme.Id;
-            customTheme.OtherText = _themeState.ThemeOtherText;
-            customTheme.Name = _themeState.ThemeName;
-            await context.SaveChangesAsync();
-
-
-            return true;
+            await Task.CompletedTask;
+            return themeState;
         }
 
-        public async Task<int> SaveTheme(IThemeStateService _themeState)
+        #region Save/Update Theme
+        public async Task<int> SaveTheme(IThemeStateService themeState, string userName, bool superUser)
         {
             using var context = await _dbContextFactory.CreateDbContextAsync();
             using var transaction = await context.Database.BeginTransactionAsync();
-            if (_themeState.ThemeId > 0)
-            {
-                var result = await UpdateTheme(_themeState);
-                if (result)
-                    return _themeState.ThemeId;
-                else
-                    return 0;
-            }
+
             try
             {
-                // Create new CustomTheme record
-                var customTheme = new CustomTheme
+                CustomTheme? customTheme;
+
+                // Check if we're updating an existing theme or creating a new one
+                if (themeState.ThemeId > 0 && (themeState.UserName == userName) || superUser)
                 {
-                    IsActive = true,
-                    IsApproved = false,
-                    Name = _themeState.ThemeName,
-                    CreatedWhen = DateTime.Now.ToUniversalTime(),
-                    OtherText = _themeState.ThemeOtherText
-                };
+                    customTheme = await context.CustomThemes
+                        .FirstOrDefaultAsync(x => x.Id == themeState.ThemeId);
 
-                context.CustomThemes.Add(customTheme);
-                await context.SaveChangesAsync();
+                    if (customTheme == null)
+                    {
+                        return 0; // Theme not found, no update possible
+                    }
 
-                // Get the ID of the newly added CustomTheme
+                    // Update existing theme
+                    customTheme.Name = themeState.ThemeName;
+                    customTheme.OtherText = themeState.ThemeOtherText;
+                }
+                else
+                {
+                    // Create new theme
+                    customTheme = new CustomTheme
+                    {
+                        IsActive = true,
+                        IsApproved = false,
+                        Name = themeState.ThemeName,
+                        CreatedWhen = DateTime.UtcNow,
+                        OtherText = themeState.ThemeOtherText,
+                        UploadedBy = userName
+                    };
+                    context.CustomThemes.Add(customTheme);
+                }
+
+                await context.SaveChangesAsync(); // Save to get customTheme.Id if new
+
                 var customThemeId = customTheme.Id;
 
-                var newThemeSelections = _themeState.SelectedThemes.Select(ts => new ThemeSelection
+                if (themeState.ThemeId >= 0) // New or update theme case
                 {
-                    CustomThemeId = customThemeId,
-                    CssVariable = ts.CssVariable,
-                    LightValue = ts.LightValue,
-                    DarkValue = ts.DarkValue,
-                    OrderPriority = ts.OrderPriority,
-                    ThemeName = ts.ThemeName,
-                    ThemeOptionId = ts.ThemeOptionId,
-                    ThemeType = ts.ThemeType,
-                }).ToList();
-                context.ThemeSelections.AddRange(newThemeSelections);
+                    await AddThemeSelections(context, customThemeId, themeState.SelectedThemes);
+                    await AddCustomShadows(context, customThemeId, themeState.SelectedShadows);
+                    await AddCustomLayouts(context, customThemeId, themeState.SelectedLayouts);
+                    await AddCustomTypographies(context, customThemeId, themeState.SelectedTypographies);
+                    await AddCustomZIndexes(context, customThemeId, themeState.SelectedZIndexes);
+                }
+
                 await context.SaveChangesAsync();
-
-                var newCustomShadows = _themeState.SelectedShadows.Select(cs => new CustomShadow
-                {
-                    CustomThemeId = customThemeId,
-                    CssVariable = cs.CssVariable,
-                    Default = cs.Default,
-                    Index = cs.Index,
-                    Name = cs.Name,
-                }).ToList();
-
-                context.CustomShadows.AddRange(newCustomShadows);
-                await context.SaveChangesAsync();
-
-                var newCustomLayouts = _themeState.SelectedLayouts.Select(cl => new CustomLayoutProperty
-                {
-                    CustomThemeId = customThemeId,
-                    CssVariable = cl.CssVariable,
-                    Default = cl.Default,
-                    Name = cl.Name,
-                    Min = cl.Min,
-                    Max = cl.Max,
-                }).ToList();
-                context.CustomLayoutProperties.AddRange(newCustomLayouts);
-                await context.SaveChangesAsync();
-
-                var newCustomTypographies = _themeState.SelectedTypographies.Select(ct => new CustomTypography
-                {
-                    CustomThemeId = customThemeId,
-                    CssVariable = ct.CssVariable,
-                    Default = ct.Default,
-                    Name = ct.Name,
-                    TypoType = ct.TypoType,
-                    DataType = ct.DataType,
-                }).ToList();
-                context.CustomTypographies.AddRange(newCustomTypographies);
-                await context.SaveChangesAsync();
-
-                var newCustomZIndexes = _themeState.SelectedZIndexes.Select(cz => new CustomZIndex
-                {
-                    CustomThemeId = customThemeId,
-                    CssVariable = cz.CssVariable,
-                    Default = cz.Default,
-                    Name = cz.Name,
-                }).ToList();
-                context.CustomZIndexes.AddRange(newCustomZIndexes);
-                await context.SaveChangesAsync();
-
                 await transaction.CommitAsync();
-                await _themeState.ResetTheme();
-                await _themeState.UpdateThemeId(customThemeId);
+
                 return customThemeId;
             }
             catch (Exception)
             {
                 await transaction.RollbackAsync();
-                return 0;
+                return 0; // Consider logging the exception for debugging
             }
         }
-    }
-}
 
-
-@*
-public async Task<int> SaveTheme(IThemeStateService themeState)
-{
-    using var context = await _dbContextFactory.CreateDbContextAsync();
-    using var transaction = await context.Database.BeginTransactionAsync();
-
-    try
-    {
-        CustomTheme customTheme;
-
-        // Check if we're updating an existing theme or creating a new one
-        if (themeState.ThemeId > 0)
+        // Helper methods
+        private static Task AddThemeSelections(ThemeDbContext context, int customThemeId, List<ThemeSelection> selections)
         {
-            customTheme = await context.CustomThemes
-                .FirstOrDefaultAsync(x => x.Id == themeState.ThemeId);
-
-            if (customTheme == null)
+            var oldThemeSelections = context.ThemeSelections.Where(ts => ts.CustomThemeId == customThemeId);
+            context.ThemeSelections.RemoveRange(oldThemeSelections);
+            var newThemeSelections = selections.Select(ts => new ThemeSelection
             {
-                return 0; // Theme not found, no update possible
+                CustomThemeId = customThemeId,
+                CssVariable = ts.CssVariable,
+                LightValue = ts.LightValue,
+                DarkValue = ts.DarkValue,
+                OrderPriority = ts.OrderPriority,
+                ThemeName = ts.ThemeName,
+                ThemeOptionId = ts.ThemeOptionId,
+                ThemeType = ts.ThemeType
+            }).ToList();
+            return context.ThemeSelections.AddRangeAsync(newThemeSelections);
+        }
+
+        private static Task AddCustomShadows(ThemeDbContext context, int customThemeId, List<CustomShadow> shadows)
+        {
+            var oldCustomShadows = context.CustomShadows.Where(cs => cs.CustomThemeId == customThemeId);
+            context.CustomShadows.RemoveRange(oldCustomShadows);
+            var newCustomShadows = shadows.Select(cs => new CustomShadow
+            {
+                CustomThemeId = customThemeId,
+                CssVariable = cs.CssVariable,
+                Default = cs.Default,
+                Index = cs.Index,
+                Name = cs.Name
+            }).ToList();
+            return context.CustomShadows.AddRangeAsync(newCustomShadows);
+        }
+
+        private static Task AddCustomLayouts(ThemeDbContext context, int customThemeId, List<CustomLayoutProperty> layouts)
+        {
+            var oldCustomLayouts = context.CustomLayoutProperties.Where(cl => cl.CustomThemeId == customThemeId);
+            context.CustomLayoutProperties.RemoveRange(oldCustomLayouts);
+            var newCustomLayouts = layouts.Select(cl => new CustomLayoutProperty
+            {
+                CustomThemeId = customThemeId,
+                CssVariable = cl.CssVariable,
+                Default = cl.Default,
+                Name = cl.Name,
+                Min = cl.Min,
+                Max = cl.Max
+            }).ToList();
+            return context.CustomLayoutProperties.AddRangeAsync(newCustomLayouts);
+        }
+
+        private static Task AddCustomTypographies(ThemeDbContext context, int customThemeId, List<CustomTypography> typographies)
+        {
+            var oldCustomTypographies = context.CustomTypographies.Where(ct => ct.CustomThemeId == customThemeId);
+            context.CustomTypographies.RemoveRange(oldCustomTypographies);
+            var newCustomTypographies = typographies.Select(ct => new CustomTypography
+            {
+                CustomThemeId = customThemeId,
+                CssVariable = ct.CssVariable,
+                Default = ct.Default,
+                Name = ct.Name,
+                TypoType = ct.TypoType,
+                DataType = ct.DataType
+            }).ToList();
+            return context.CustomTypographies.AddRangeAsync(newCustomTypographies);
+        }
+
+        private static Task AddCustomZIndexes(ThemeDbContext context, int customThemeId, List<CustomZIndex> zIndexes)
+        {
+            var oldCustomZIndexes = context.CustomZIndexes.Where(cz => cz.CustomThemeId == customThemeId);
+            context.CustomZIndexes.RemoveRange(oldCustomZIndexes);
+            var newCustomZIndexes = zIndexes.Select(cz => new CustomZIndex
+            {
+                CustomThemeId = customThemeId,
+                CssVariable = cz.CssVariable,
+                Default = cz.Default,
+                Name = cz.Name
+            }).ToList();
+            return context.CustomZIndexes.AddRangeAsync(newCustomZIndexes);
+        }
+        #endregion
+
+        public async Task<bool> DeleteTheme(int themeId)
+        {
+            using var context = await _dbContextFactory.CreateDbContextAsync();
+            var theme = await context.CustomThemes.FirstOrDefaultAsync(x => x.Id == themeId);
+            if (theme == null)
+            {
+                return false;
             }
-
-            // Update existing theme
-            customTheme.Name = themeState.ThemeName;
-            customTheme.OtherText = themeState.ThemeOtherText;
+            theme.IsActive = false;
+            await context.SaveChangesAsync();
+            return true;
         }
-        else
-        {
-            // Create new theme
-            customTheme = new CustomTheme
-            {
-                IsActive = true,
-                IsApproved = false,
-                Name = themeState.ThemeName,
-                CreatedWhen = DateTime.UtcNow, // Use UtcNow directly
-                OtherText = themeState.ThemeOtherText
-            };
-            context.CustomThemes.Add(customTheme);
-        }
-
-        await context.SaveChangesAsync(); // Save to get customTheme.Id if new
-
-        var customThemeId = customTheme.Id;
-
-        // Handle related entities (only insert new ones if creating, update if needed)
-        if (themeState.ThemeId <= 0) // New theme case
-        {
-            await AddThemeSelections(context, customThemeId, themeState.SelectedThemes);
-            await AddCustomShadows(context, customThemeId, themeState.SelectedShadows);
-            await AddCustomLayouts(context, customThemeId, themeState.SelectedLayouts);
-            await AddCustomTypographies(context, customThemeId, themeState.SelectedTypographies);
-            await AddCustomZIndexes(context, customThemeId, themeState.SelectedZIndexes);
-        }
-        // Optionally, add logic here to update related entities if needed for existing themes
-
-        await context.SaveChangesAsync();
-        await transaction.CommitAsync();
-
-        // Update state
-        await themeState.ResetTheme();
-        await themeState.UpdateThemeId(customThemeId);
-
-        return customThemeId;
-    }
-    catch (Exception)
-    {
-        await transaction.RollbackAsync();
-        return 0; // Consider logging the exception for debugging
     }
 }
-
-// Helper methods to keep the main logic cleaner
-private async Task AddThemeSelections(DbContext context, int customThemeId, IEnumerable<ThemeSelectionState> selections)
-{
-    var newThemeSelections = selections.Select(ts => new ThemeSelection
-    {
-        CustomThemeId = customThemeId,
-        CssVariable = ts.CssVariable,
-        LightValue = ts.LightValue,
-        DarkValue = ts.DarkValue,
-        OrderPriority = ts.OrderPriority,
-        ThemeName = ts.ThemeName,
-        ThemeOptionId = ts.ThemeOptionId,
-        ThemeType = ts.ThemeType
-    }).ToList();
-    context.ThemeSelections.AddRange(newThemeSelections);
-}
-
-private async Task AddCustomShadows(DbContext context, int customThemeId, IEnumerable<CustomShadowState> shadows)
-{
-    var newCustomShadows = shadows.Select(cs => new CustomShadow
-    {
-        CustomThemeId = customThemeId,
-        CssVariable = cs.CssVariable,
-        Default = cs.Default,
-        Index = cs.Index,
-        Name = cs.Name
-    }).ToList();
-    context.CustomShadows.AddRange(newCustomShadows);
-}
-
-private async Task AddCustomLayouts(DbContext context, int customThemeId, IEnumerable<CustomLayoutState> layouts)
-{
-    var newCustomLayouts = layouts.Select(cl => new CustomLayoutProperty
-    {
-        CustomThemeId = customThemeId,
-        CssVariable = cl.CssVariable,
-        Default = cl.Default,
-        Name = cl.Name,
-        Min = cl.Min,
-        Max = cl.Max
-    }).ToList();
-    context.CustomLayoutProperties.AddRange(newCustomLayouts);
-}
-
-private async Task AddCustomTypographies(DbContext context, int customThemeId, IEnumerable<CustomTypographyState> typographies)
-{
-    var newCustomTypographies = typographies.Select(ct => new CustomTypography
-    {
-        CustomThemeId = customThemeId,
-        CssVariable = ct.CssVariable,
-        Default = ct.Default,
-        Name = ct.Name,
-        TypoType = ct.TypoType,
-        DataType = ct.DataType
-    }).ToList();
-    context.CustomTypographies.AddRange(newCustomTypographies);
-}
-
-private async Task AddCustomZIndexes(DbContext context, int customThemeId, IEnumerable<CustomZIndexState> zIndexes)
-{
-    var newCustomZIndexes = zIndexes.Select(cz => new CustomZIndex
-    {
-        CustomThemeId = customThemeId,
-        CssVariable = cz.CssVariable,
-        Default = cz.Default,
-        Name = cz.Name
-    }).ToList();
-    context.CustomZIndexes.AddRange(newCustomZIndexes);
-}
-*@

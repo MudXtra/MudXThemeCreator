@@ -1,7 +1,9 @@
-﻿@page "/style"
+@page "/style"
 @using MudBlazor.Utilities
 @inject StyleService styleService
 @inject IThemeCreatorService themeCreatorService
+@inject IThemeStateService ThemeStateService
+
 <HeadContent>
     <meta name="description" content="A page dedicated to polling the theme created for current variable valus var(--mud-palette-*)." />
     <meta property="og:description" content="A page dedicated to polling the theme created for current variable valus var(--mud-palette-*)." />
@@ -9,37 +11,37 @@
 <PageTitle>MudBlazor CSS Variable Style Lookup</PageTitle>
 <style>
     .mud-list-item-text > .mud-typography {
-        white-space: nowrap; 
-        overflow: hidden; 
-        text-overflow: ellipsis; 
-        max-width: 100%; 
+    white-space: nowrap; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+    max-width: 100%; 
     }
 
     .autocomplete-list {
-        position: absolute;
-        max-height: 500px;
-        overflow-y: auto;
-        width: 300px;
-        color: var(--mud-palette-drawer-text);
-        background-color: var(--mud-palette-drawer-background); 
-        z-index: 1000; 
-        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); 
-        border: 1px solid var(--mud-palette-drawer-icon); 
-        border-radius: var(--mud-default-borderradius);
+    position: absolute;
+    max-height: 500px;
+    overflow-y: auto;
+    width: 300px;
+    color: var(--mud-palette-drawer-text);
+    background-color: var(--mud-palette-drawer-background); 
+    z-index: 1000; 
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); 
+    border: 1px solid var(--mud-palette-drawer-icon); 
+    border-radius: var(--mud-default-borderradius);
     }
 
     .style-chip {
-        width: 20px;
-        height: 20px;
-        border: 2px solid var(--mud-palette-drawer-icon);
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--mud-palette-drawer-icon);
     }
 </style>
 <MudText Typo="Typo.h3">CSS Variable Style Lookup</MudText>
 <br />
 <MudTextField @ref="_searchField" Disabled="@cssDisabled" ValueChanged="@((string v) => CssVariableChanged(v))" Value="@cssVariable" Style="width: 300px;" Variant="Variant.Outlined" Immediate="true"
-              Placeholder="e.g. --mud-palette-primary" Label="Variable to Lookup" FullWidth="false" OnKeyDown="@KeyDown"
-              HelperText="Start Typing to search" @ondblclick="FillAutoCompleteList"
-              Adornment="Adornment.End" AdornmentIcon="@(cssVariable.Length > 1 ? Icons.Material.Filled.Clear : string.Empty)" OnAdornmentClick="@CssValueClear" />
+Placeholder="e.g. --mud-palette-primary" Label="Variable to Lookup" FullWidth="false" OnKeyDown="@KeyDown"
+HelperText="Start Typing to search" @ondblclick="FillAutoCompleteList"
+Adornment="Adornment.End" AdornmentIcon="@(cssVariable.Length > 1 ? Icons.Material.Filled.Clear : string.Empty)" OnAdornmentClick="@CssValueClear" />
 @if (AutoCompleteItems != null && AutoCompleteItems.Count > 0)
 {
     <MudList Class="autocomplete-list" T="string" @bind-SelectedValue="@selectedAutoCompleteItem" SelectionMode="SelectionMode.SingleSelection">
@@ -69,7 +71,7 @@
     </HeaderContent>
     <RowTemplate>
         <MudTd DataLabel="Variable">
-            <b>@context.Variable</b>
+            <b data-tooltip="@context.Tooltip">@context.Variable</b>
         </MudTd>
         <MudTd DataLabel="Response">
             @context.Response
@@ -299,11 +301,23 @@
         {
             response = "Failure to locate variable.";
         }
-        responseList.Insert(0, new ResponseItem(cssVariable, response));
+        responseList.Insert(0, new ResponseItem(cssVariable, response, GetNameLookup(cssVariable)));
         cssDisabled = false;
         await _searchField.ResetAsync();
         await _searchField.FocusAsync();
     }
 
-    public record ResponseItem(string Variable, string Response) { }
+    private string GetNameLookup(string variable)
+    {
+        return new[]
+        {
+        ThemeStateService.SelectedThemes.FirstOrDefault(x => x.CssVariable!.Contains(variable, StringComparison.InvariantCultureIgnoreCase))?.ThemeName,
+        ThemeStateService.SelectedLayouts.FirstOrDefault(x => x.CssVariable.Contains(variable, StringComparison.InvariantCultureIgnoreCase))?.Name,
+        ThemeStateService.SelectedShadows.FirstOrDefault(x => x.CssVariable.Contains(variable, StringComparison.InvariantCultureIgnoreCase))?.Name,
+        ThemeStateService.SelectedTypographies.FirstOrDefault(x => x.CssVariable.Contains(variable, StringComparison.InvariantCultureIgnoreCase))?.Name,
+        ThemeStateService.SelectedZIndexes.FirstOrDefault(x => x.CssVariable.Contains(variable, StringComparison.InvariantCultureIgnoreCase))?.Name
+    }.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x)) ?? string.Empty;
+    }
+
+    public record ResponseItem(string Variable, string Response, string Tooltip) { }
 }

@@ -9,17 +9,18 @@ namespace MudBlazorThemes.UI.Components
     public partial class ThemePanels : ComponentBase
     {
         private List<ThemeOption> themeOptions = [];
-        private List<ThemePalette> themePalettes = [];
-        private List<ThemeSelection> themeSelections = [];
-        private List<CustomShadow> customShadows = [];
-        private List<CustomLayoutProperty> customLayouts = [];
-        private List<CustomTypography> customTypographies = [];
-        private List<CustomZIndex> customZIndexes = [];
+        public List<ThemePalette> themePalettes = [];
+        public List<ThemeSelection> themeSelections = [];
+        public List<CustomShadow> customShadows = [];
+        public List<CustomLayoutProperty> customLayouts = [];
+        public List<CustomTypography> customTypographies = [];
+        public List<CustomZIndex> customZIndexes = [];
         private List<string> _typoList = [];
         private List<string> _selectedFonts = [];
         private int _typoValue = 0;
         private int _currentShadowIndex = 0;
-        private int _defaultThemeId = 1;
+        private readonly int _defaultThemeId = 1;
+        private int _updateKey;
         private string _searchString = string.Empty;
         private bool _isLoading = true;
 
@@ -112,7 +113,19 @@ namespace MudBlazorThemes.UI.Components
                 panelDictionary.Add($"o{option.Id}", false);
             }
             await LoadDefaultThemeValues();
+            ThemeState.OnChange += CssChanged;
             _isLoading = false;
+        }
+
+        private void CssChanged()
+        {
+
+            StateHasChanged();
+        }
+
+        public void Dispose()
+        {
+            ThemeState.OnChange -= CssChanged;
         }
 
         #region Loading and Selecting Full Themes

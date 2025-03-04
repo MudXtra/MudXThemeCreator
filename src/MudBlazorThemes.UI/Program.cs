@@ -3,8 +3,6 @@ using Auth0.AspNetCore.Authentication;
 using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.OpenIdConnect;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor;
 using MudBlazor.Extensions;
@@ -82,6 +80,7 @@ builder.Services.AddDbContextFactory<ThemeDbContext>(cfg => cfg.UseNpgsql(connSt
 // Add other services
 builder.Services.AddScoped<IThemeCreatorService, ThemeCreatorService>();
 builder.Services.AddScoped<IThemeStateService, ThemeStateService>();
+builder.Services.AddScoped<INotifierService, NotifierService>();
 builder.Services.AddScoped<StyleService>();
 
 // SEO improvements

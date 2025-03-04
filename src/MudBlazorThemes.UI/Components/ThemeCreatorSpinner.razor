@@ -1,11 +1,11 @@
-﻿@typeparam T 
+@typeparam T 
 
 <div @onkeydown:preventDefault="true">
     <MudStack Class="pr-6 shadow-selector" Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween"
               tabindex="0" @onkeydown="HandleKeyDown">
     @if (SpinnerList.Count > 0)
         {
-            <MudSelect T="int" ShrinkLabel="true" Value="@SpinnerIndex" ValueChanged="@SetSpinnerIndex" Label="Style">
+            <MudSelect T="int" ShrinkLabel="true" Value="@SpinnerIndex" ValueChanged="@SetSpinnerIndex" Label="Style" LockScroll>
                 @for (int i = 0; i < SpinnerList.Count; i++)
                 {
                     var index = i;

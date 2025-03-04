@@ -9,8 +9,19 @@ namespace MudBlazorThemes.DAL.Services
         private readonly ILocalStorageService _localService = localService;
         public bool IsDarkMode { get; set; } = false;
         public bool IsInitialized { get; private set; } = false;
-        public int ThemeId { get; set; }
+        public int ThemeId
+        {
+            get;
+            set
+            {
+                field = value;
+                IsApproved = CustomThemes.FirstOrDefault(x => x.Id == value)?.IsApproved ?? false;
+                UserName = CustomThemes.FirstOrDefault(x => x.Id == value)?.UploadedBy ?? string.Empty;
+            }
+        }
         public bool IsModified { get; set; }
+        public bool IsApproved { get; set; }
+        public string UserName { get; set; } = string.Empty;
         public string ThemeName { get; set; } = string.Empty;
         public string ThemeOtherText { get; set; } = string.Empty;
         public List<ThemeSelection> SelectedThemes { get; private set; } = [];

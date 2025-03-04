@@ -1,6 +1,7 @@
-@inject IThemeStateService themeState
 @page "/"
 @using System.Text.RegularExpressions
+@inject INotifierService NotifierService
+@inject IThemeStateService themeState
 
 @if (_cssTableSwitch)
 {
@@ -88,14 +89,83 @@
     <!-- Buttons Section -->
     <MudItem xs="12">
         <MudPaper Class="pa-4" Elevation="2">
-            <MudText Typo="Typo.h6" Class="mb-4">Buttons</MudText>
+            <MudText Typo="Typo.h6" Class="mb-4">
+                Buttons
+                <MudTooltip ShowOnHover="false" ShowOnClick  Duration="500" >
+                    <ChildContent>
+                        <MudIcon Icon="@Icons.Material.TwoTone.Info" Color="Color.Info" />
+                    </ChildContent>
+                    <TooltipContent>
+                        <MudSimpleTable Striped Bordered Dense>
+                            <colgroup>
+                                <col style="width: 200px;" />
+                                <col style="max-width: 500px;" />
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Used For</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="center-text">
+                                        <MudButton Onclick="@(() => NotifierService.SetSearchTerm("TextPrimary"))">TextPrimary</MudButton>
+                                    </td>
+                                    <td>Generally the color of the Text. Can be overridden with the Color enum.</td>
+                                </tr>
+                                <tr>
+                                    <td class="center-text">
+                                        <MudButton Onclick="@(() => NotifierService.SetSearchTerm("Primary"))">
+                                            Primary, PrimaryContrastText, PrimaryLighten and PrimaryDarken for Hover
+                                        </MudButton>
+                                    </td>
+                                    <td>When a color is selected using the Color enum. Use the color enum name.</td>
+                                </tr>
+                                <tr>
+                                    <td class="center-text">
+                                        <MudButton Onclick="@(() => NotifierService.SetSearchTerm("Primary"))">
+                                            PrimaryDarken PrimaryLighten
+                                        </MudButton>
+                                    </td>
+                                    <td>Used to establish the hover color, as well as the filled state</td>
+                                </tr>
+                                <tr>
+                                    <td class="center-text">
+                                        <MudButton Onclick="@(() => NotifierService.SetSearchTerm("Opacity"))">
+                                            Opacity
+                                         </MudButton>
+                                    </td>
+                                    <td>Set under Layout Properties, sets opacity for hovering and ripple.</td>
+                                </tr>
+                                <tr>
+                                    <td class="center-text">
+                                        <MudButton Onclick="@(() => NotifierService.SetSearchTerm("ActionDisabled"))">
+                                        ActionDisabled
+                                        </MudButton>
+                                    </td>
+                                    <td>The color of the button text, border, etc. of a Disabled button.</td>
+                                </tr>
+                                <tr>
+                                    <td class="center-text">
+                                        <MudButton Onclick="@(() => NotifierService.SetSearchTerm("ActionDisabled"))">
+                                            ActionDisabledBackground
+                                        </MudButton>
+                                    </td>
+                                    <td>In a filled scenario the background color of a Disabled button.</td>
+                                </tr>
+                            </tbody>
+                        </MudSimpleTable>
+                    </TooltipContent>
+                </MudTooltip>                    
+            </MudText>
             <MudText>
                 <b>Filled: </b>
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ma-2">Primary</MudButton>
-                <MudButton Variant="Variant.Filled" Color="Color.Secondary" Class="ma-2">Secondary</MudButton>
-                <MudButton Variant="Variant.Filled" Color="Color.Tertiary" Class="ma-2">Tertiary</MudButton>
-                <MudButton Variant="Variant.Filled" Color="Color.Surface" Class="ma-2">Surface</MudButton>
-                <MudButton Variant="Variant.Filled" Color="Color.Dark" Class="ma-2">Dark</MudButton>
+                <MudButton Onclick="@(() => NotifierService.SetSearchTerm("Primary"))" Variant="Variant.Filled" Color="Color.Primary" Class="ma-2">Primary</MudButton>
+                <MudButton Onclick="@(() => NotifierService.SetSearchTerm("Secondary"))" Variant="Variant.Filled" Color="Color.Secondary" Class="ma-2">Secondary</MudButton>
+                <MudButton Onclick="@(() => NotifierService.SetSearchTerm("Tertiary"))" Variant="Variant.Filled" Color="Color.Tertiary" Class="ma-2">Tertiary</MudButton>
+                <MudButton Onclick="@(() => NotifierService.SetSearchTerm("Surface"))" Variant="Variant.Filled" Color="Color.Surface" Class="ma-2">Surface</MudButton>
+                <MudButton Onclick="@(() => NotifierService.SetSearchTerm("Dark"))" Variant="Variant.Filled" Color="Color.Dark" Class="ma-2">Dark</MudButton>
                 <MudButtonGroup Color="Color.Tertiary" Variant="Variant.Filled">
                     <MudButton>@_buttonText</MudButton>
                     <MudMenu Icon="@Icons.Material.Filled.ArrowDropDown" Style="align-self: auto;">
@@ -105,20 +175,22 @@
                         <MudMenuItem OnClick="() => SetButtonText(3)">Reply & Delete</MudMenuItem>
                     </MudMenu>
                 </MudButtonGroup>
+                <MudButton Onclick="@(() => NotifierService.SetSearchTerm("ActionDisabled"))" Variant="Variant.Filled" Disabled Class="ma-2">Disabled</MudButton>
             </MudText>
             <br />
             <MudText>
                 <b>Outlined: </b>
-                <MudButton Variant="Variant.Outlined" Color="Color.Error" Class="ma-2">Error</MudButton>
-                <MudButton Variant="Variant.Outlined" Color="Color.Info" Class="ma-2">Info</MudButton>
-                <MudButton Variant="Variant.Outlined" Color="Color.Success" Class="ma-2">Success</MudButton>
-                <MudButton Variant="Variant.Outlined" Color="Color.Warning" Class="ma-2">Warning</MudButton>
-                <MudButton Variant="Variant.Outlined" Color="Color.Transparent" Class="ma-2">Transparent</MudButton>
+                <MudButton Onclick="@(() => NotifierService.SetSearchTerm("Error"))" Variant="Variant.Outlined" Color="Color.Error" Class="ma-2">Error</MudButton>
+                <MudButton Onclick="@(() => NotifierService.SetSearchTerm("Info"))" Variant="Variant.Outlined" Color="Color.Info" Class="ma-2">Info</MudButton>
+                <MudButton Onclick="@(() => NotifierService.SetSearchTerm("Success"))" Variant="Variant.Outlined" Color="Color.Success" Class="ma-2">Success</MudButton>
+                <MudButton Onclick="@(() => NotifierService.SetSearchTerm("Warning"))" Variant="Variant.Outlined" Color="Color.Warning" Class="ma-2">Warning</MudButton>
+                <MudButton Onclick="@(() => NotifierService.SetSearchTerm("Transparent"))" Variant="Variant.Outlined" Color="Color.Transparent" Class="ma-2">Transparent</MudButton>
                 <MudButtonGroup OverrideStyles="false" Variant="Variant.Outlined">
                     <MudButton Color="Color.Tertiary" OnClick="@(() => _activeButtonId = 0)" Variant="@(_activeButtonId == 0 ? Variant.Filled : Variant.Outlined)">All</MudButton>
                     <MudButton Color="Color.Tertiary" OnClick="@(() => _activeButtonId = 1)" Variant="@(_activeButtonId == 1 ? Variant.Filled : Variant.Outlined)">Active</MudButton>
                     <MudButton Color="Color.Tertiary" OnClick="@(() => _activeButtonId = 2)" Variant="@(_activeButtonId == 2 ? Variant.Filled : Variant.Outlined)">InActive</MudButton>
                 </MudButtonGroup>
+                <MudButton Onclick="@(() => NotifierService.SetSearchTerm("ActionDisabled"))" Variant="Variant.Outlined" Disabled Class="ma-2">Disabled</MudButton>
             </MudText>
             <MudText>
                 <b>Text: </b>
@@ -128,6 +200,7 @@
                 <MudButton Variant="Variant.Text" Class="ma-2"><MudText Typo="Typo.body2">Body2</MudText></MudButton>
                 <MudButton Variant="Variant.Text" Class="ma-2"><MudText Typo="Typo.caption">Caption</MudText></MudButton>
                 <MudButton Variant="Variant.Text" Class="ma-2"><MudText Typo="Typo.overline">Overline</MudText></MudButton>
+                <MudButton Onclick="@(() => NotifierService.SetSearchTerm("ActionDisabled"))" Variant="Variant.Text" Disabled Class="ma-2">Disabled</MudButton>
             </MudText>
         </MudPaper>
     </MudItem>

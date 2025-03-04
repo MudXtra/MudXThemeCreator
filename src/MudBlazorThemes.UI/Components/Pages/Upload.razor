@@ -46,20 +46,20 @@
                     <MudText class="mb-4" Typo="Typo.body2" HtmlTag="p">
                         By default saved themes are only available to the account they are saved to. At site owner discression
                         it may be activated for public use. You can create an issue on GitHub if you would like this to happen sooner.
-                        If the current theme has not been modified it cannot be saved.
+                        If the current theme has not been modified it cannot be saved. An account can hold a maximum of 5 private themes.
                     </MudText>
                     <MudText>Theme ID: <b>@_themeId@if (_isModified)
                             {
                                 <sup style="color: red; font-weight: bolder;" data-tooltip="Modified">*&nbsp;</sup>
                             }</b>
                     </MudText>
-                    <MudTextField Label="Theme Name" @bind-Value="_themeName" Required Validation="@(MaxLengthNameValidation)" HelperText="5-30 Characters" />
-                    <MudTextField AutoGrow Class="mb-2" Label="Theme Other Text" HelperText="5-175 Characters" @bind-Value="_themeOtherText" Required Validation="@(MaxLengthOtherValidation)" />
+                    <MudTextField Label="Theme Name" @bind-Value="_themeName" @bind-Value:after="@(() => themeState.IsModified = true)" Required Validation="@(MaxLengthNameValidation)" HelperText="5-30 Characters" />
+                    <MudTextField AutoGrow Class="mb-2" Label="Theme Other Text" HelperText="5-175 Characters" @bind-Value="_themeOtherText" @bind-Value:after="@(() => themeState.IsModified = true)" Required Validation="@(MaxLengthOtherValidation)" />
                 </MudCardContent>
                 <MudCardActions>
                     <MudTooltip Text="Saving a theme will create a new theme for your account unless you are the owner. You can only have 5 themes per account.">
                         <MudButton Variant="Variant.Text" Color="Color.Primary" Disabled="@(!_success || !themeState.IsModified)" OnClick="SaveTheme">
-                            Save Theme
+                            @(SaveUpdateTheme ? "Create New Theme" : "Update Existing Theme")
                         </MudButton>
                         <sup class="ml-n2" style="color: red; font-weight: bolder;">*&nbsp;</sup>
                     </MudTooltip>
@@ -71,8 +71,8 @@
 
 <AuthorizeView Roles="SuperUser">
     <MudStack Row AlignItems="AlignItems.Center">
-        <MudSwitch Label="Approved" Value="@_approved" ValueChanged="@((bool val) => ApproveChanged(val))" />
-        <MudIconButton Icon="@Icons.Material.Filled.Save" Disabled="@(_disabledApprove || !_success)" />
+        <MudSwitch Label="Approved" Value="@_approved" ValueChanged="@((bool val) => ApproveChanged(val))" Color="Color.Primary" />
+        <MudIconButton Icon="@Icons.Material.Filled.Save" Disabled="@(_disabledApprove || !_success)" OnClick="ApproveTheme" />
     </MudStack>
 </AuthorizeView>
 
@@ -94,6 +94,14 @@
     [CascadingParameter(Name = "SuperUser")]
     public bool SuperUser { get; set; }
 
+    /// <summary>
+    /// Whether this is an insertion or update of a theme.
+    /// </summary>
+    private bool SaveUpdateTheme => _themeId == 0 ||                            // New Theme
+                                    (_approved && !SuperUser) ||                // Theme not public and user is not a Super User
+                                    (themeState.UserName != UserName.Trim()     // Theme doesn't belong to user nor are they SuperUser
+                                     && !SuperUser);
+
     protected override void OnInitialized()
     {
         base.OnInitialized();
@@ -114,12 +122,23 @@
         _saveForm?.Validate();
     }
 
+    private async Task ApproveTheme()
+    {
+        var themeId = _themeId;
+        await themeService.UpdateApprovedThemeAsync(themeId, _approved);
+        themeState.CustomThemes = await themeService.GetCustomThemesAsync();
+        await themeState.ResetTheme();
+        await themeState.UpdateThemeId(themeId, false, true);
+        Snackbar.Add($"Theme {(_approved ? "Approved" : "UnApproved")} Successfully", Severity.Success);
+    }
+
     private void UpdateTheme()
     {
         _themeName = themeState.ThemeName;
         _themeOtherText = themeState.ThemeOtherText;
         _themeId = themeState.ThemeId;
         _isModified = themeState.IsModified;
+        _approved = themeState.IsApproved;
         StateHasChanged();
     }
 
@@ -227,7 +246,9 @@
 
     private async Task SaveTheme()
     {
-        var result = await themeService.SaveTheme(themeState);
+        themeState.ThemeName = _themeName;
+        themeState.ThemeOtherText = _themeOtherText;
+        var result = await themeService.SaveTheme(themeState, UserName.Trim(), SuperUser);
         if (result > 0)
         {
             themeState.CustomThemes = await themeService.GetCustomThemesAsync();
@@ -250,10 +271,9 @@
     {
         _themeId = themeState.ThemeId;
         _isModified = themeState.IsModified;
-        if (string.IsNullOrWhiteSpace(_themeName))
-            _themeName = themeState.ThemeName;
-        if (string.IsNullOrWhiteSpace(_themeOtherText))
-            _themeOtherText = themeState.ThemeName;
+        _themeName = themeState.ThemeName;
+        _themeOtherText = themeState.ThemeName;
+        _approved = themeState.IsApproved;
         StateHasChanged();
         _saveForm?.Validate();
     }

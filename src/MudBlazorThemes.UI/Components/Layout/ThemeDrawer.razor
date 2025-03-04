@@ -5,6 +5,7 @@
 @inject NavigationManager NavManager
 @inject ISnackbar Snackbar
 @inject ILogger<MainLayout> LogService
+@inject INotifierService NotificerService
 
 <MudDrawer @bind-Open="IsDrawerOpen" ClipMode="DrawerClipMode.Docked" Width="300px"
 Elevation="2" Variant="DrawerVariant.Persistent">
@@ -16,7 +17,7 @@ Elevation="2" Variant="DrawerVariant.Persistent">
         }
         else
         {
-            <MudSelect @key="_selectKey" @bind-Value="@_themeId" @bind-Value:after="@(() => LoadTheme(_themeId))" Label="AVAILABLE THEMES">
+            <MudSelect @key="_selectKey" @bind-Value="@_themeId" @bind-Value:after="@(() => LoadTheme(_themeId))" Label="AVAILABLE THEMES" LockScroll>
                 <AuthorizeView Roles="SuperUser">
                     <Authorized>
                         @foreach (var customTheme in _customThemes)
@@ -86,6 +87,7 @@ Elevation="2" Variant="DrawerVariant.Persistent">
     {
         base.OnInitialized();
         ThemeState.OnChange += ThemeChanged;
+        NotificerService.OnChange += SearchUpdate;
     }
 
     protected override void OnParametersSet()
@@ -99,8 +101,6 @@ Elevation="2" Variant="DrawerVariant.Persistent">
         if (firstRender)
         {
             ThemeChanged();
-            _selectKey++;
-            StateHasChanged();
         }            
     }
 
@@ -154,14 +154,19 @@ Elevation="2" Variant="DrawerVariant.Persistent">
         // loading all the defaults for the selected theme
         var newThemeSelections = await ThemeService.GetThemeSelectionsAsync(themeId);
         await ThemeState.UpdateThemeData(newThemeSelections, false);
+        _themePanelComponent.themeSelections = newThemeSelections;
         var newCustomShadows = await ThemeService.GetCustomShadowsAsync(themeId);
         await ThemeState.UpdateThemeData(newCustomShadows, false);
+        _themePanelComponent.customShadows = newCustomShadows;
         var newCustomLayouts = await ThemeService.GetCustomLayoutsAsync(themeId);
         await ThemeState.UpdateThemeData(newCustomLayouts, false);
+        _themePanelComponent.customLayouts = newCustomLayouts;
         var newCustomTypographies = await ThemeService.GetCustomTypographiesAsync(themeId);
         await ThemeState.UpdateThemeData(newCustomTypographies, false);
+        _themePanelComponent.customTypographies = newCustomTypographies;
         var newCustomZIndexes = await ThemeService.GetCustomZIndexesAsync(themeId);
         await ThemeState.UpdateThemeData(newCustomZIndexes, false);
+        _themePanelComponent.customZIndexes = newCustomZIndexes;
         // updating ThemeId and triggering a state change reflecting the new theme
         await ThemeState.UpdateThemeId(themeId, false, true);
         var ct = await ThemeService.GetCustomThemesAsync();
@@ -177,14 +182,23 @@ Elevation="2" Variant="DrawerVariant.Persistent">
 
     private void ThemeChanged()
     {
+        _selectKey = 0;
+        StateHasChanged();
         _customThemes = ThemeState.CustomThemes;
         _themeId = ThemeState.ThemeId;        
         _selectKey++;
         StateHasChanged();
     }
 
+    private void SearchUpdate()
+    {
+        SearchAllPanels(NotificerService.SearchTerm);
+        StateHasChanged();
+    }
+
     public void Dispose()
     {
         ThemeState.OnChange -= ThemeChanged;
+        NotificerService.OnChange -= SearchUpdate;
     }
 }

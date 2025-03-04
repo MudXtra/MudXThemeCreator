@@ -42,6 +42,10 @@
 	float: left;
 }
 
+.center-text {
+    text-align: center !important;
+}
+
 .period-dot {
 	transform: scale(0.5); /* Reduces size to 50% */
 	margin-top: 15px; /* Pushes it down by 15px */

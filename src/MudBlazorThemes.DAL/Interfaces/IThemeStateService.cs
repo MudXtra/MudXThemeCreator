@@ -6,6 +6,8 @@ namespace MudBlazorThemes.DAL.Interfaces
     {
         bool IsInitialized { get; }
         bool IsModified { get; set; }
+        bool IsApproved { get; set; }
+        string UserName { get; set; }
         int ThemeId { get; set; }
         string ThemeName { get; set; }
         string ThemeOtherText { get; set; }
