@@ -7,7 +7,7 @@
 </div>
 <!-- Tryblazor version: https://try.mudblazor.com/snippet/wkGybuaSrnvujsOP -->
 
-<MudExDialog @bind-Visible="_isOpen" OptionsEx="_dialogOptions" OnClosed="CancelOpen">
+<MudDialog @bind-Visible="_isOpen" Options="_dialogOptions">
     <TitleContent>
         <MudStack Class="ma-0 pa-0 mt-n1 mb-1 mr-n1" Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
             <MudText Style="max-width: 190px; user-select: none;" Class="left-text" Typo="Typo.h6">Edit @Name</MudText>
@@ -44,15 +44,14 @@
                               Color="Color.Tertiary" Style="@($"color: {initialTertiary} !important;")" />
             </MudTooltip>
             <MudSpacer />
-            <MudButtonGroup OverrideStyles="false" Variant="Variant.Outlined">
-                <MudIconButton Size="Size.Small" Variant="_view == ColorPickerView.Spectrum ? Variant.Outlined : Variant.Filled"
-                               Icon="@Icons.Material.Filled.Tune" OnClick="@(() => _view = ColorPickerView.Spectrum)" />
-                <MudIconButton Size="Size.Small" Variant="_view == ColorPickerView.Grid ? Variant.Outlined : Variant.Filled"
-                               Icon="@Icons.Material.Filled.Apps" OnClick="@(() => _view = ColorPickerView.Grid)" />
-                <MudIconButton Size="Size.Small" Variant="_view == ColorPickerView.Palette ? Variant.Outlined : Variant.Filled"
-                               Icon="@Icons.Material.Filled.Palette" OnClick="@(() => _view = ColorPickerView.Palette)" />
-            </MudButtonGroup>
+            <MudToggleGroup T="ColorPickerView" SelectionMode="SelectionMode.SingleSelection" Value="@_view"
+                            Color="Color.Primary" Class="mr-4" ValueChanged="ViewChanged">
+                <MudToggleItem Value="ColorPickerView.Spectrum"><MudIcon Size="Size.Small" Icon="@Icons.Material.Filled.Tune" /></MudToggleItem>
+                <MudToggleItem Value="ColorPickerView.Grid"><MudIcon Size="Size.Small" Icon="@Icons.Material.Filled.Apps" /></MudToggleItem>
+                <MudToggleItem Value="ColorPickerView.Palette"><MudIcon Size="Size.Small" Icon="@Icons.Material.Filled.Palette" /></MudToggleItem>
+            </MudToggleGroup>
         </div>
-        <MudColorPicker Class="py-0 my-0" ShowToolbar="false" ColorPickerView="@_view" Value="@ThemeColor" PickerVariant="PickerVariant.Static" Elevation="0" ValueChanged="UpdateColor" @onmousedown="@OnMouseDown" />
+        <MudColorPicker Class="py-0 my-0" ShowToolbar="false" ColorPickerView="@_view" Value="@ThemeColor"
+        PickerVariant="PickerVariant.Static" Elevation="0" ValueChanged="UpdateColor" @onmousedown="@OnMouseDown" />
     </DialogContent>
-</MudExDialog>
+</MudDialog>

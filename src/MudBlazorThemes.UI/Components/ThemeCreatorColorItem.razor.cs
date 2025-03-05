@@ -2,8 +2,6 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using MudBlazor;
-using MudBlazor.Extensions;
-using MudBlazor.Extensions.Options;
 using MudBlazor.Utilities;
 using MudBlazorThemes.DAL.Services;
 using Nextended.Core.Extensions;
@@ -15,14 +13,13 @@ namespace MudBlazorThemes.UI.Components
         private bool _isOpen;
         private bool _saveClose;
         private ColorPickerView _view = ColorPickerView.Spectrum;
-        private readonly DialogOptionsEx _dialogOptions = new()
+
+        private DialogOptions _dialogOptions { get; set; } = new()
         {
             CloseOnEscapeKey = true,
             BackdropClick = true,
             Position = DialogPosition.Center,
             CloseButton = false,
-            Animations = [AnimationType.Pulse],
-            DragMode = MudDialogDragMode.WithoutBounds,
         };
 
         [CascadingParameter(Name = "IsDarkTheme")]
@@ -162,6 +159,12 @@ namespace MudBlazorThemes.UI.Components
             await ToggleOpen();
         }
 
+        private void ViewChanged(ColorPickerView value)
+        {
+            _view = value;
+            InvokeAsync(StateHasChanged);
+        }
+
         private async Task ToggleOpen()
         {
             _isOpen = !_isOpen;
@@ -193,6 +196,7 @@ namespace MudBlazorThemes.UI.Components
 
         private async Task OnMouseDown(MouseEventArgs e)
         {
+            // add a mouseup event to update the color when the user releases the mouse button
             await JsRuntime.InvokeVoidAsync("attachMouseUp", DotNetObjectReference.Create(this));
         }
 

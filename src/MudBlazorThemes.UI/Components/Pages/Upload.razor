@@ -6,15 +6,15 @@
 @inject IThemeCreatorService themeService
 @inject IThemeStateService themeState
 
-<PageTitle>MudBlazor Theme Manager Creator CSS Upload Section</PageTitle>
+<PageTitle>MudBlazor Theme Manager Creator Upload Section</PageTitle>
 <HeadContent>
-    <meta name="description" content="Where a dev can upload a Bootswatch theme into MudBlazor Theme Creator." />
-    <meta property="og:description" content="Where a dev can upload a Bootswatch theme into MudBlazor Theme Creator." />
+    <meta name="description" content="Where a dev can upload a Bootswatch or MudBlazor theme into MudBlazor Theme Creator." />
+    <meta property="og:description" content="Where a dev can upload a Bootswatch or MudBlazor theme into MudBlazor Theme Creator." />
 </HeadContent>
-<MudText Typo="Typo.h3">CSS Upload Section</MudText>
+<MudText Typo="Typo.h3">Upload Section</MudText>
 <br />
 <MudText Typo="Typo.body1">
-    Welcome<b>@($" {UserName}")</b>,<br />Please upload a Bootswatch CSS file or a MudBlazor CS theme file no larger than 1MB here to create a potential new theme or save a theme to your account.
+    Welcome<b>@($"{(UserName.Length > 0 ? " " : "")}{UserName}")</b>,<br />Please upload or paste a Bootswatch CSS file or a MudBlazor CS theme file no larger than 1MB here to create a potential new theme or save a theme to your account.
 </MudText>
 <br />
 
@@ -28,6 +28,8 @@
     Bootswatch uploading is not perfect, Very little typography and layout property information is gathered and Zindex is complete ignored. <br/>
     Not all themes are compatible, the uploader accepts version 7.xx MudBlazor Themes and 8.xx MudBlazor Themes. It will only pick up the first theme in a multi theme file.
 </MudText>
+<MudButton Color="Color.Primary" Disabled="@(_pastedFile.Length < 50)" OnClick="@(async () => await ProcessFile(_pastedFile))">Upload Pasted Content</MudButton>
+<MudTextField Class="mt-2" Immediate ShrinkLabel Variant="Variant.Outlined" Label="Paste CSS or CS File" Lines="5" @bind-Value="_pastedFile" />
 <br />
 <AuthorizeView>
     <Authorized>
@@ -77,7 +79,7 @@
 </AuthorizeView>
 
 @code {
-    readonly string[] AllowedExtensions = { ".css","*.cs" };
+    readonly string[] AllowedExtensions = { ".css",".cs" };
     const long MaxFileSize = 1024 * 1024; // 1MB in bytes
     private bool _approved;
     private bool _disabledApprove = true;
@@ -87,6 +89,7 @@
     private int _themeId;
     private bool _isModified;
     private MudForm? _saveForm;
+    private string _pastedFile = string.Empty;
 
     [CascadingParameter(Name = "UserName")]
     public string UserName { get; set; } = string.Empty;
@@ -209,31 +212,7 @@
                 if (fileContent.Length > 0)
                 {
                     ShowNotification("File loaded successfully, processing...", Severity.Success);
-                    (string themeName, string otherText, List<ThemeSelection> themeSelections, List<CustomShadow> customShadows,
-                        List<CustomLayoutProperty> customLayoutProperties, List<CustomTypography> customTypographies, List<CustomZIndex> customZIndices)
-                        themeStatus = await themeService.ImportBootswatchTheme(fileContent);
-                    await themeState.ResetTheme();
-                    await themeState.UpdateThemeData(themeStatus.themeSelections, true, true);
-                    await themeState.UpdateThemeData(themeStatus.customShadows, true, true);
-                    await themeState.UpdateThemeData(themeStatus.customLayoutProperties, true, true);
-                    await themeState.UpdateThemeData(themeStatus.customTypographies, true, true);
-                    await themeState.UpdateThemeData(themeStatus.customZIndices, true, true);
-                    themeState.ThemeName = themeStatus.themeName;
-                    themeState.ThemeOtherText = themeStatus.otherText;
-                    themeState.IsModified = true;
-                    themeState.CustomThemes.Add(
-                        new CustomTheme
-                            {
-                                IsActive = true,
-                                CreatedWhen = DateTime.Now,
-                                Id = 0,
-                                Name = string.IsNullOrWhiteSpace(themeStatus.themeName) ? "*Uploaded Theme" : themeStatus.themeName,
-                                OtherText = string.IsNullOrWhiteSpace(themeStatus.otherText) ? "*Uploaded Theme" : themeStatus.otherText,
-                                UploadedBy = UserName
-                            });
-                    await themeState.UpdateThemeId(0, true, true);
-                    _saveForm?.Validate();
-                    ShowNotification($"{themeStatus.themeName} imported successfully, don't forget to save it!", Severity.Success);
+                    await ProcessFile(fileContent);
                 }
                 else
                 {
@@ -254,12 +233,7 @@
                 if (fileContent.Length > 0)
                 {
                     ShowNotification("File loaded successfully, processing...", Severity.Success);
-                    var newthemeState = await themeService.ImportMudBlazorTheme(fileContent, themeState);
-
-                    return;
-                    await themeState.UpdateThemeId(0, true, true);
-                    _saveForm?.Validate();
-                    ShowNotification($"{newthemeState.ThemeName} imported successfully, don't forget to save it!", Severity.Success);
+                    await ProcessFile(fileContent);
                 }
                 else
                 {
@@ -269,6 +243,64 @@
             catch (Exception ex)
             {
                 ShowNotification($"An error occurred: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+
+    private async Task ProcessFile(string fileContent)
+    {
+        if (fileContent.Contains("MudTheme", StringComparison.InvariantCultureIgnoreCase))
+        {
+            var newthemeState = await themeService.ImportMudBlazorTheme(fileContent);
+            if (newthemeState.CustomTheme != null)
+            {
+                await themeState.ResetTheme();
+                await themeState.UpdateThemeData(newthemeState.ThemeSelections, true, true);
+                await themeState.UpdateThemeData(newthemeState.CustomShadows, true, true);
+                await themeState.UpdateThemeData(newthemeState.CustomLayoutProperties, true, true);
+                await themeState.UpdateThemeData(newthemeState.CustomTypographies, true, true);
+                await themeState.UpdateThemeData(newthemeState.CustomZIndices, true, true);
+                themeState.ThemeName = newthemeState.CustomTheme.Name;
+                newthemeState.CustomTheme.Name = string.IsNullOrWhiteSpace(themeState.ThemeName) ? "*Uploaded Theme" : themeState.ThemeName;
+                themeState.ThemeOtherText = newthemeState.CustomTheme.OtherText;
+                newthemeState.CustomTheme.OtherText = string.IsNullOrWhiteSpace(themeState.ThemeOtherText) ? "*Uploaded Theme" : themeState.ThemeOtherText;
+                newthemeState.CustomTheme.UploadedBy = UserName;
+                themeState.IsModified = true;
+                themeState.CustomThemes.Add(newthemeState.CustomTheme);
+                await themeState.UpdateThemeId(0, true, true);
+                _saveForm?.Validate();
+                ShowNotification($"{newthemeState.CustomTheme.Name} imported successfully, don't forget to save it!", Severity.Success);
+            }
+            else
+            {
+                ShowNotification("Theme import failed", Severity.Error);
+            }
+        }
+        else
+        {
+            var newthemeState = await themeService.ImportBootswatchTheme(fileContent);
+            if (newthemeState.CustomTheme != null)
+            {
+                await themeState.ResetTheme();
+                await themeState.UpdateThemeData(newthemeState.ThemeSelections, true, true);
+                await themeState.UpdateThemeData(newthemeState.CustomShadows, true, true);
+                await themeState.UpdateThemeData(newthemeState.CustomLayoutProperties, true, true);
+                await themeState.UpdateThemeData(newthemeState.CustomTypographies, true, true);
+                await themeState.UpdateThemeData(newthemeState.CustomZIndices, true, true);
+                themeState.ThemeName = newthemeState.CustomTheme.Name;
+                newthemeState.CustomTheme.Name = string.IsNullOrWhiteSpace(themeState.ThemeName) ? "*Uploaded Theme" : themeState.ThemeName;
+                themeState.ThemeOtherText = newthemeState.CustomTheme.OtherText;
+                newthemeState.CustomTheme.OtherText = string.IsNullOrWhiteSpace(themeState.ThemeOtherText) ? "*Uploaded Theme" : themeState.ThemeOtherText;
+                newthemeState.CustomTheme.UploadedBy = UserName;
+                themeState.IsModified = true;
+                themeState.CustomThemes.Add(newthemeState.CustomTheme);
+                await themeState.UpdateThemeId(0, true, true);
+                _saveForm?.Validate();
+                ShowNotification($"{newthemeState.CustomTheme.Name} imported successfully, don't forget to save it!", Severity.Success);
+            }
+            else
+            {
+                ShowNotification("Theme import failed", Severity.Error);
             }
         }
     }

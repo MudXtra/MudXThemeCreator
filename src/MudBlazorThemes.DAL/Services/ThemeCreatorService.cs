@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
+using MudBlazor;
 using MudBlazorThemes.DAL.Data;
 using MudBlazorThemes.DAL.Interfaces;
 using MudBlazorThemes.DAL.Models;
@@ -106,13 +107,9 @@ namespace MudBlazorThemes.DAL.Services
             return await context.CustomZIndexes.Where(x => x.CustomThemeId == themeId).ToListAsync();
         }
 
-        public async Task // Complex Tuple anyone?
-            <(string themeName, string otherText, List<ThemeSelection> themeSelections, List<CustomShadow> customShadows,
-            List<CustomLayoutProperty> customLayoutProperties, List<CustomTypography> customTypographies,
-            List<CustomZIndex> customZIndices)>
-            ImportBootswatchTheme(string cssContent, int mappedThemeId = 1)
+        public async Task<ThemeDTO> ImportBootswatchTheme(string cssContent)
         {
-            using var context = await _dbContextFactory.CreateDbContextAsync();
+            var theme = new ThemeDTO();
 
             // get theme stuff to reinsert
             var defaultThemeId = 1;
@@ -121,6 +118,8 @@ namespace MudBlazorThemes.DAL.Services
             var customLayouts = await GetCustomLayoutsAsync(defaultThemeId);
             var customTypographies = await GetCustomTypographiesAsync(defaultThemeId);
             var customZIndexes = await GetCustomZIndexesAsync(defaultThemeId);
+
+            using var context = await _dbContextFactory.CreateDbContextAsync();
 
             var mappedThemeList = await context.MappedCssVariables.Where(x => x.MappedThemeId == 1).ToListAsync();
 
@@ -233,9 +232,24 @@ namespace MudBlazorThemes.DAL.Services
                     }
                 }
             }
-            (string themeName, string otherText, List<ThemeSelection> themeSelections, List<CustomShadow> customShadows, List<CustomLayoutProperty> customLayoutProperties, List<CustomTypography> customTypographies, List<CustomZIndex> customZIndices)
-                importedTheme = (themeName, otherText, themeSelections, customShadows, customLayouts, customTypographies, customZIndexes);
-            return importedTheme;
+            theme = new ThemeDTO
+            {
+                CustomTheme = new()
+                {
+                    Name = themeName,
+                    OtherText = otherText,
+                    IsActive = true,
+                    IsApproved = false,
+                    UploadedBy = null,
+                    CreatedWhen = DateTime.UtcNow
+                },
+                ThemeSelections = themeSelections,
+                CustomShadows = customShadows,
+                CustomLayoutProperties = customLayouts,
+                CustomTypographies = customTypographies,
+                CustomZIndices = customZIndexes,
+            };
+            return theme;
         }
 
         private static Dictionary<string, string> ParseCssVariables(string cssContent, string theme)
@@ -260,8 +274,9 @@ namespace MudBlazorThemes.DAL.Services
             return variables;
         }
 
-        public async Task<IThemeStateService> ImportMudBlazorTheme(string content, IThemeStateService themeState)
+        public async Task<ThemeDTO> ImportMudBlazorTheme(string content)
         {
+            var theme = new ThemeDTO();
             // get theme stuff to reinsert
             var defaultThemeId = 1;
             var themeSelections = await GetThemeSelectionsAsync(defaultThemeId);
@@ -294,44 +309,49 @@ namespace MudBlazorThemes.DAL.Services
                 }
 
                 // 2. PaletteLight
-                Match plMatch = Regex.Match(fullContent, @"PaletteLight\s*=\s*new\s*PaletteLight\s*\(\s*\)\s*{(.*?)}\s*,");
+                Match plMatch = Regex.Match(fullContent, @"PaletteLight\s*=\s*new\s*PaletteLight\s*\(\s*\)\s*\{([\s\S]*?)\}");
                 if (plMatch.Success)
                 {
                     themeData["PaletteLight"] = ParseKeyValuePairs(plMatch.Groups[1].Value);
                 }
 
                 // 3. PaletteDark
-                Match pdMatch = Regex.Match(fullContent, @"PaletteDark\s*=\s*new\s*PaletteDark\s*\(\s*\)\s*{(.*?)}\s*,");
+                Match pdMatch = Regex.Match(fullContent, @"PaletteDark\s*=\s*new\s*PaletteDark\s*\(\s*\)\s*\{([\s\S]*?)\}");
                 if (pdMatch.Success)
                 {
                     themeData["PaletteDark"] = ParseKeyValuePairs(pdMatch.Groups[1].Value);
                 }
 
                 // 4. LayoutProperties
-                Match lpMatch = Regex.Match(fullContent, @"LayoutProperties\s*=\s*new\s*LayoutProperties\s*\(\s*\)\s*{(.*?)}\s*,");
+                Match lpMatch = Regex.Match(fullContent, @"LayoutProperties\s*=\s*new\s*LayoutProperties\s*\(\s*\)\s*\{([\s\S]*?)\}");
                 if (lpMatch.Success)
                 {
                     themeData["LayoutProperties"] = ParseKeyValuePairs(lpMatch.Groups[1].Value);
                 }
 
                 // 5. Typography
-                Match typoMatch = Regex.Match(fullContent, @"Typography\s*=\s*new\s*Typography\s*\(\s*\)\s*{(.*?)}\s*,");
+                var typography = new Dictionary<string, Dictionary<string, string>>();
+                string typoPattern = @"Typography\s*=\s*new\s*Typography\s*\(\s*\)\s*\{((?:[^{}]|\{[^}]*\})*?)\}";
+                Match typoMatch = Regex.Match(content, typoPattern);
                 if (typoMatch.Success)
                 {
                     string typoContent = typoMatch.Groups[1].Value;
-                    var typography = new Dictionary<string, Dictionary<string, string>>();
-                    themeData["Typography"] = typography;
 
-                    string typoSubPattern = @"(Default|H1|H2|H3|H4|H5|H6|Subtitle1|Subtitle2|Body1|Body2|Input|Button|Caption|Overline)(?:Typography)?\s*=\s*(?:new\s*\w*\(\s*\)\s*)?{(.*?)}\s*,";
-                    foreach (Match subMatch in Regex.Matches(typoContent, typoSubPattern))
+                    // 2. Parse subsections
+                    string subSectionPattern = @"(\w+)\s*=\s*new\s*\w+\s*{([^}]+)}";
+                    MatchCollection subMatches = Regex.Matches(typoContent, subSectionPattern);
+
+                    // Process each subsection
+                    foreach (Match subMatch in subMatches)
                     {
-                        string sectionName = subMatch.Groups[1].Value;
-                        typography[sectionName] = ParseKeyValuePairs(subMatch.Groups[2].Value);
+                        string sectionName = subMatch.Groups[1].Value; // First word (Default, H1, etc.)
+                        string sectionContent = subMatch.Groups[2].Value; // Content inside {}
+                        typography[sectionName] = ParseKeyValuePairs(sectionContent);
                     }
                 }
 
                 // 6. ZIndex
-                Match ziMatch = Regex.Match(fullContent, @"ZIndex\s*=\s*new\s*ZIndex\s*\(\s*\)\s*{(.*?)}\s*}\s*;");
+                Match ziMatch = Regex.Match(fullContent, @"ZIndex\s*=\s*new\s*ZIndex\s*\(\s*\)\s*\{([\s\S]*?)\}");
                 if (ziMatch.Success)
                 {
                     themeData["ZIndex"] = ParseKeyValuePairs(ziMatch.Groups[1].Value);
@@ -364,8 +384,120 @@ namespace MudBlazorThemes.DAL.Services
                         }
                     }
                 }
+                // Output results
+                Console.WriteLine("\nTypography:");
+                foreach (var section in typography)
+                {
+                    Console.WriteLine($"  {section.Key}:");
+                    foreach (var kvp in section.Value)
+                    {
+                        Console.WriteLine($"    {kvp.Key}: {kvp.Value}");
+                    }
+                }
+
+                foreach (var themeSection in themeSelections)
+                {
+                    // Check if the key exists in PaletteLight before assigning
+                    if (themeData.TryGetValue("PaletteLight", out object? lValue) &&
+                        lValue is Dictionary<string, string> paletteLight &&
+                        paletteLight.TryGetValue(themeSection.ThemeName, out string? lightValue))
+                    {
+                        themeSection.LightValue = lightValue.Replace("\"", string.Empty);
+                    }
+
+                    // Check if the key exists in PaletteDark before assigning
+                    if (themeData.TryGetValue("PaletteDark", out object? dValue) &&
+                        dValue is Dictionary<string, string> paletteDark &&
+                        paletteDark.TryGetValue(themeSection.ThemeName, out string? darkValue))
+                    {
+                        themeSection.DarkValue = darkValue.Replace("\"", string.Empty);
+                    }
+                }
+
+                foreach (var layProp in customLayouts)
+                {
+                    if (themeData.TryGetValue("LayoutProperties", out object? value) &&
+                        value is Dictionary<string, string> layout &&
+                        layout.TryGetValue(layProp.Name, out string? newValue) &&
+                        int.TryParse(Regex.Replace(newValue ?? "", "[^0-9]", ""), out int result))
+                    {
+                        layProp.Default = result;
+                    }
+                }
+
+                foreach (var zProp in customZIndexes)
+                {
+                    if (themeData.TryGetValue("ZIndex", out object? value) &&
+                        value is Dictionary<string, string> zindex &&
+                        zindex.TryGetValue(zProp.Name, out string? newValue) &&
+                        int.TryParse(Regex.Replace(newValue ?? "", "[^0-9]", ""), out int result))
+                    {
+                        zProp.Default = result.ToString();
+                    }
+                }
+
+                foreach (var group in customTypographies.Select(x => x.TypoType).Distinct())
+                {
+                    foreach (var typo in customTypographies.Where(x => x.TypoType == group).ToList())
+                    {
+                        if (typography.TryGetValue(typo.TypoType, out var value) && // Use TypoType as key (e.g., "Default", "H1")
+                            value is Dictionary<string, string> typoValue &&
+                            typoValue.TryGetValue(typo.Name, out string? newValue) &&
+                            newValue != null) // Ensure newValue isn't null
+                        {
+                            switch (typo.DataType)
+                            {
+                                case "Int32": // For FontWeight
+                                    if (int.TryParse(Regex.Replace(newValue, "[^0-9]", ""), out int intResult))
+                                    {
+                                        typo.Default = intResult.ToString(); // Store as string
+                                    }
+                                    break;
+
+                                case "Double": // For LineHeight
+                                    if (double.TryParse(Regex.Replace(newValue, "[^0-9.-]", ""), out double doubleResult))
+                                    {
+                                        typo.Default = doubleResult.ToString(); // Store as string
+                                    }
+                                    break;
+
+                                case "String": // For FontSize, LetterSpacing, TextTransform
+                                    typo.Default = newValue.Replace("\"", string.Empty); // Keep as is
+                                    break;
+
+                                case "String[]": // For FontFamily
+                                                 // Assuming newValue is like "[\"Roboto\", \"Helvetica\", \"Arial\", \"sans-serif\"]"
+                                                 // Strip brackets and split if needed, or just store as is
+                                    typo.Default = newValue.Trim('[', ']').Replace("\"", string.Empty);
+                                    break;
+
+                                default:
+                                    Console.WriteLine($"Unknown DataType: {typo.DataType} for {typo.Name}");
+                                    break;
+                            }
+                        }
+                    }
+                }
+
+                theme = new ThemeDTO
+                {
+                    CustomTheme = new()
+                    {
+                        Name = themeData["Name"].ToString() ?? string.Empty,
+                        OtherText = "Imported from MudBlazor",
+                        IsActive = true,
+                        IsApproved = false,
+                        UploadedBy = null,
+                        CreatedWhen = DateTime.UtcNow
+                    },
+                    ThemeSelections = themeSelections,
+                    CustomShadows = customShadows,
+                    CustomLayoutProperties = customLayouts,
+                    CustomTypographies = customTypographies,
+                    CustomZIndices = customZIndexes
+                };
             }
-            return themeState;
+            return theme;
         }
 
         #region Save/Update Theme

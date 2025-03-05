@@ -4,7 +4,6 @@ using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
-using MudBlazor;
 using MudBlazor.Extensions;
 using MudBlazor.Extensions.Options;
 using MudBlazor.Services;
@@ -40,6 +39,12 @@ builder.Host.UseSerilog((context, services, configuration) => configuration
         restrictedToMinimumLevel: LogEventLevel.Warning
     ));
 
+// Add services to the container.
+builder.Services.AddRazorComponents()
+    .AddInteractiveServerComponents();
+builder.Services.AddAuthorization();
+builder.Services.AddBlazoredLocalStorage();
+
 // Add MudBlazor services, MudEx and MudMarkdown
 void configMud(MudServicesConfiguration configMud)
 {
@@ -50,17 +55,19 @@ void configMud(MudServicesConfiguration configMud)
 }
 void configMudEx(MudExConfiguration configMudEx)
 {
-    configMudEx.WithoutAutomaticCssLoading();
+    configMudEx.WithAutomaticCssLoading();
+    configMudEx.WithDefaultDialogOptions(new DialogOptionsEx
+    {
+        CloseOnEscapeKey = true,
+        BackdropClick = true,
+        CloseButton = false,
+        Animations = new[] { AnimationType.Pulse },
+        DragMode = MudDialogDragMode.WithoutBounds,
+        DisableSizeMarginY = true,
+        DisablePositionMargin = true
+    });
 }
 builder.Services.AddMudServicesWithExtensions(configMud, configMudEx);
-builder.Services.AddMudMarkdownServices();
-
-// Add services to the container.
-builder.Services.AddAuthorization();
-builder.Services.AddRazorPages();
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
-builder.Services.AddBlazoredLocalStorage();
 
 // Add DB connection
 using (var conn = new Npgsql.NpgsqlConnection(connString))
@@ -101,10 +108,6 @@ builder.Services.AddAuth0WebAppAuthentication(options =>
 
 var app = builder.Build();
 
-app.UseAntiforgery();
-
-app.MapStaticAssets();
-
 app.MapGet("/Account/Login", async (HttpContext httpContext, string returnUrl = "/") =>
 {
     var authenticationProperties = new LoginAuthenticationPropertiesBuilder()
@@ -125,6 +128,9 @@ app.MapGet("/Account/Logout", async (HttpContext httpContext) =>
     await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 });
 
+app.MapStaticAssets();
+app.UseHttpsRedirection();
+app.UseAntiforgery();
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -136,9 +142,6 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-// Mudex
-app.Use(MudExWebApp.MudExMiddleware);
-
 // Add headers
 app.Use(async (context, next) =>
 {
@@ -146,10 +149,6 @@ app.Use(async (context, next) =>
     context.Response.Headers.Append("X-Frame-Options", "DENY");
     await next();
 });
-
-app.UseHttpsRedirection();
-
-app.UseAntiforgery();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

@@ -119,7 +119,7 @@ namespace MudBlazorThemes.UI.Components
 
         private void CssChanged()
         {
-
+            LoadSavedThemeData();
             StateHasChanged();
         }
 
