@@ -196,51 +196,80 @@
         var fileExtension = Path.GetExtension(file.Name).ToLowerInvariant();
         if (!AllowedExtensions.Contains(fileExtension))
         {
-            ShowNotification("Only css files (.css) are allowed.", Severity.Warning);
+            ShowNotification("Only css or cs files (.css, .cs) are allowed.", Severity.Warning);
             return;
         }
 
-        try
+        if (fileExtension == ".css")
         {
-            // Read the content of the file
-            var fileContent = await new StreamReader(file.OpenReadStream()).ReadToEndAsync();
-            if (fileContent.Length > 0)
+            try
             {
-                ShowNotification("File loaded successfully, processing...", Severity.Success);
-                (string themeName, string otherText, List<ThemeSelection> themeSelections, List<CustomShadow> customShadows,
-                    List<CustomLayoutProperty> customLayoutProperties, List<CustomTypography> customTypographies, List<CustomZIndex> customZIndices)
-                    themeStatus = await themeService.ImportBootswatchTheme(fileContent);
-                await themeState.ResetTheme();
-                await themeState.UpdateThemeData(themeStatus.themeSelections, true, true);
-                await themeState.UpdateThemeData(themeStatus.customShadows, true, true);
-                await themeState.UpdateThemeData(themeStatus.customLayoutProperties, true, true);
-                await themeState.UpdateThemeData(themeStatus.customTypographies, true, true);
-                await themeState.UpdateThemeData(themeStatus.customZIndices, true, true);
-                themeState.ThemeName = themeStatus.themeName;
-                themeState.ThemeOtherText = themeStatus.otherText;
-                themeState.IsModified = true;                
-                themeState.CustomThemes.Add(
-                    new CustomTheme
-                    {
-                         IsActive = true,
-                         CreatedWhen = DateTime.Now,
-                         Id = 0,
-                         Name = string.IsNullOrWhiteSpace(themeStatus.themeName) ? "*Uploaded Theme" : themeStatus.themeName,
-                         OtherText = string.IsNullOrWhiteSpace(themeStatus.otherText) ? "*Uploaded Theme" : themeStatus.otherText,
-                         UploadedBy = UserName
-                    });
-                await themeState.UpdateThemeId(0,true,true);
-                _saveForm?.Validate();
-                ShowNotification($"{themeStatus.themeName} imported successfully, don't forget to save it!", Severity.Success);
+                // Read the content of the file
+                var fileContent = await new StreamReader(file.OpenReadStream()).ReadToEndAsync();
+                if (fileContent.Length > 0)
+                {
+                    ShowNotification("File loaded successfully, processing...", Severity.Success);
+                    (string themeName, string otherText, List<ThemeSelection> themeSelections, List<CustomShadow> customShadows,
+                        List<CustomLayoutProperty> customLayoutProperties, List<CustomTypography> customTypographies, List<CustomZIndex> customZIndices)
+                        themeStatus = await themeService.ImportBootswatchTheme(fileContent);
+                    await themeState.ResetTheme();
+                    await themeState.UpdateThemeData(themeStatus.themeSelections, true, true);
+                    await themeState.UpdateThemeData(themeStatus.customShadows, true, true);
+                    await themeState.UpdateThemeData(themeStatus.customLayoutProperties, true, true);
+                    await themeState.UpdateThemeData(themeStatus.customTypographies, true, true);
+                    await themeState.UpdateThemeData(themeStatus.customZIndices, true, true);
+                    themeState.ThemeName = themeStatus.themeName;
+                    themeState.ThemeOtherText = themeStatus.otherText;
+                    themeState.IsModified = true;
+                    themeState.CustomThemes.Add(
+                        new CustomTheme
+                            {
+                                IsActive = true,
+                                CreatedWhen = DateTime.Now,
+                                Id = 0,
+                                Name = string.IsNullOrWhiteSpace(themeStatus.themeName) ? "*Uploaded Theme" : themeStatus.themeName,
+                                OtherText = string.IsNullOrWhiteSpace(themeStatus.otherText) ? "*Uploaded Theme" : themeStatus.otherText,
+                                UploadedBy = UserName
+                            });
+                    await themeState.UpdateThemeId(0, true, true);
+                    _saveForm?.Validate();
+                    ShowNotification($"{themeStatus.themeName} imported successfully, don't forget to save it!", Severity.Success);
+                }
+                else
+                {
+                    ShowNotification($"Upload failed", Severity.Warning);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                ShowNotification($"Upload failed", Severity.Warning);
+                ShowNotification($"An error occurred: {ex.Message}", Severity.Error);
             }
         }
-        catch (Exception ex)
+        else if (fileExtension == ".cs")
         {
-            ShowNotification($"An error occurred: {ex.Message}", Severity.Error);
+            try
+            {
+                // Read the content of the file
+                var fileContent = await new StreamReader(file.OpenReadStream()).ReadToEndAsync();
+                if (fileContent.Length > 0)
+                {
+                    ShowNotification("File loaded successfully, processing...", Severity.Success);
+                    var newthemeState = await themeService.ImportMudBlazorTheme(fileContent, themeState);
+
+                    return;
+                    await themeState.UpdateThemeId(0, true, true);
+                    _saveForm?.Validate();
+                    ShowNotification($"{newthemeState.ThemeName} imported successfully, don't forget to save it!", Severity.Success);
+                }
+                else
+                {
+                    ShowNotification($"Upload failed", Severity.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowNotification($"An error occurred: {ex.Message}", Severity.Error);
+            }
         }
     }
 

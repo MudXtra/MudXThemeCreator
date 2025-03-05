@@ -260,9 +260,111 @@ namespace MudBlazorThemes.DAL.Services
             return variables;
         }
 
-        public async Task<IThemeStateService> ImportMudBlazorTheme(string csContent, IThemeStateService themeState)
+        public async Task<IThemeStateService> ImportMudBlazorTheme(string content, IThemeStateService themeState)
         {
-            await Task.CompletedTask;
+            // get theme stuff to reinsert
+            var defaultThemeId = 1;
+            var themeSelections = await GetThemeSelectionsAsync(defaultThemeId);
+            var customShadows = await GetCustomShadowsAsync(defaultThemeId);
+            var customLayouts = await GetCustomLayoutsAsync(defaultThemeId);
+            var customTypographies = await GetCustomTypographiesAsync(defaultThemeId);
+            var customZIndexes = await GetCustomZIndexesAsync(defaultThemeId);
+
+            using var context = await _dbContextFactory.CreateDbContextAsync();
+
+            var themeData = new Dictionary<string, object>();
+
+            string themePattern = @"public\s+static\s+readonly\s+MudTheme\s+(\w+)\s*=\s*(?:new\s*\(\s*\)|new\s*\w+\s*\(\s*\))\s*{([\s\S]*?)}\s*;";
+            Match themeMatch = Regex.Match(content, themePattern);
+            if (themeMatch.Success)
+            {
+                themeData["Name"] = themeMatch.Groups[1].Value;
+                string fullContent = themeMatch.Groups[2].Value;
+
+                // Helper function to parse key-value pairs
+                static Dictionary<string, string> ParseKeyValuePairs(string sectionContent)
+                {
+                    var dict = new Dictionary<string, string>();
+                    string pairPattern = @"(\w+)\s*=\s*(""[^""]*""|\[.*?\]|\d*\.?\d+)(?:,|$)";
+                    foreach (Match pair in Regex.Matches(sectionContent, pairPattern))
+                    {
+                        dict[pair.Groups[1].Value] = pair.Groups[2].Value;
+                    }
+                    return dict;
+                }
+
+                // 2. PaletteLight
+                Match plMatch = Regex.Match(fullContent, @"PaletteLight\s*=\s*new\s*PaletteLight\s*\(\s*\)\s*{(.*?)}\s*,");
+                if (plMatch.Success)
+                {
+                    themeData["PaletteLight"] = ParseKeyValuePairs(plMatch.Groups[1].Value);
+                }
+
+                // 3. PaletteDark
+                Match pdMatch = Regex.Match(fullContent, @"PaletteDark\s*=\s*new\s*PaletteDark\s*\(\s*\)\s*{(.*?)}\s*,");
+                if (pdMatch.Success)
+                {
+                    themeData["PaletteDark"] = ParseKeyValuePairs(pdMatch.Groups[1].Value);
+                }
+
+                // 4. LayoutProperties
+                Match lpMatch = Regex.Match(fullContent, @"LayoutProperties\s*=\s*new\s*LayoutProperties\s*\(\s*\)\s*{(.*?)}\s*,");
+                if (lpMatch.Success)
+                {
+                    themeData["LayoutProperties"] = ParseKeyValuePairs(lpMatch.Groups[1].Value);
+                }
+
+                // 5. Typography
+                Match typoMatch = Regex.Match(fullContent, @"Typography\s*=\s*new\s*Typography\s*\(\s*\)\s*{(.*?)}\s*,");
+                if (typoMatch.Success)
+                {
+                    string typoContent = typoMatch.Groups[1].Value;
+                    var typography = new Dictionary<string, Dictionary<string, string>>();
+                    themeData["Typography"] = typography;
+
+                    string typoSubPattern = @"(Default|H1|H2|H3|H4|H5|H6|Subtitle1|Subtitle2|Body1|Body2|Input|Button|Caption|Overline)(?:Typography)?\s*=\s*(?:new\s*\w*\(\s*\)\s*)?{(.*?)}\s*,";
+                    foreach (Match subMatch in Regex.Matches(typoContent, typoSubPattern))
+                    {
+                        string sectionName = subMatch.Groups[1].Value;
+                        typography[sectionName] = ParseKeyValuePairs(subMatch.Groups[2].Value);
+                    }
+                }
+
+                // 6. ZIndex
+                Match ziMatch = Regex.Match(fullContent, @"ZIndex\s*=\s*new\s*ZIndex\s*\(\s*\)\s*{(.*?)}\s*}\s*;");
+                if (ziMatch.Success)
+                {
+                    themeData["ZIndex"] = ParseKeyValuePairs(ziMatch.Groups[1].Value);
+                }
+
+                // Example output
+                Console.WriteLine($"Theme Name: {themeData["Name"]}");
+                foreach (var section in themeData)
+                {
+                    if (section.Key != "Name" && section.Key != "Typography")
+                    {
+                        Console.WriteLine($"\n{section.Key}:");
+                        var dict = (Dictionary<string, string>)section.Value;
+                        foreach (var kvp in dict)
+                        {
+                            Console.WriteLine($"  {kvp.Key}: {kvp.Value}");
+                        }
+                    }
+                    else if (section.Key == "Typography")
+                    {
+                        Console.WriteLine("\nTypography:");
+                        var typoDict = (Dictionary<string, Dictionary<string, string>>)section.Value;
+                        foreach (var subSection in typoDict)
+                        {
+                            Console.WriteLine($"  {subSection.Key}:");
+                            foreach (var kvp in subSection.Value)
+                            {
+                                Console.WriteLine($"    {kvp.Key}: {kvp.Value}");
+                            }
+                        }
+                    }
+                }
+            }
             return themeState;
         }
 
