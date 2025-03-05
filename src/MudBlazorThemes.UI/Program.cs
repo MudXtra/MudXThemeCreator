@@ -103,6 +103,8 @@ var app = builder.Build();
 
 app.UseAntiforgery();
 
+app.MapStaticAssets();
+
 app.MapGet("/Account/Login", async (HttpContext httpContext, string returnUrl = "/") =>
 {
     var authenticationProperties = new LoginAuthenticationPropertiesBuilder()
@@ -148,8 +150,6 @@ app.Use(async (context, next) =>
 app.UseHttpsRedirection();
 
 app.UseAntiforgery();
-
-app.MapStaticAssets();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

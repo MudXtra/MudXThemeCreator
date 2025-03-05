@@ -154,7 +154,7 @@ namespace MudBlazorThemes.DAL.Services
         {
             ThemeId = await _localService.GetItemAsync<int>("selectedThemeId");
             // if no theme found set it to 1
-            if (ThemeId == 0)
+            if (ThemeId < 1)
             {
                 ThemeId = 1;
                 ThemeName = CustomThemes.FirstOrDefault(x => x.Id == 1)?.Name ?? string.Empty;

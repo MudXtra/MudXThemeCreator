@@ -72,5 +72,6 @@
         customThemes = customThemes.Where(c => c.UploadedBy == UserName.Trim() || SuperUser).ToList();
         _count = customThemes.Where(x => !x.IsApproved).Count();
         _maxLimit = ThemeService.MaxThemes(UserName.Trim());
+        StateHasChanged();
     }
 }
