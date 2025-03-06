@@ -21,12 +21,11 @@ COPY ["src/MudBlazorThemes.UI/MudBlazorThemes.UI.csproj", "MudBlazorThemes.UI/"]
 COPY ["src/MudBlazorThemes.DAL/MudBlazorThemes.DAL.csproj", "MudBlazorThemes.DAL/"]
 RUN dotnet restore "./MudBlazorThemes.UI/MudBlazorThemes.UI.csproj"
 COPY . .
-WORKDIR "/src/MudBlazorThemes.UI"
-RUN dotnet build "./MudBlazorThemes.UI.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./MudBlazorThemes.UI.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+WORKDIR "/src/MudBlazorThemes.UI"
+RUN dotnet publish "MudBlazorThemes.UI.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 # Set environment variables from build args
 ENV dbName=$DB_NAME
