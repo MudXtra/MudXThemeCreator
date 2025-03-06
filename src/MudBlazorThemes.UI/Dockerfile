@@ -9,22 +9,26 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["ThemeCreatorMudBlazor.UI/ThemeCreatorMudBlazor.UI.csproj", "ThemeCreatorMudBlazor.UI/"]
-COPY ["ThemeCreatorMudBlazor.DAL/ThemeCreatorMudBlazor.DAL.csproj", "ThemeCreatorMudBlazor.DAL/"]
-RUN dotnet restore "./ThemeCreatorMudBlazor.UI/ThemeCreatorMudBlazor.UI.csproj"
+COPY ["MudBlazorThemes.UI/MudBlazorThemes.UI.csproj", "MudBlazorThemes.UI/"]
+COPY ["MudBlazorThemes.DAL/MudBlazorThemes.DAL.csproj", "MudBlazorThemes.DAL/"]
+RUN dotnet restore "./MudBlazorThemes.UI/MudBlazorThemes.UI.csproj"
 COPY . .
-WORKDIR "/src/ThemeCreatorMudBlazor.UI"
-RUN dotnet build "./ThemeCreatorMudBlazor.UI.csproj" -c $BUILD_CONFIGURATION -o /app/build
+WORKDIR "/src/MudBlazorThemes.UI"
+RUN dotnet build "./MudBlazorThemes.UI.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./ThemeCreatorMudBlazor.UI.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "./MudBlazorThemes.UI.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
-# Copy the SQLite database file
-COPY ThemeCreatorMudBlazor.UI/ThemeCreator.db /app/publish/ThemeCreator.db
-RUN chmod 666 /app/publish/ThemeCreator.db
+# Set environment variables from build args
+ENV dbName=$DB_NAME
+ENV dbPort=$DB_PORT
+ENV dbUser=$DB_USER
+ENV dbPassword=$DB_PASSWORD
+ENV domain=$GIT_DOMAIN
+ENV clientId=$GIT_CLIENTID
 
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "ThemeCreatorMudBlazor.UI.dll"]
+ENTRYPOINT ["dotnet", "MudBlazorThemes.UI.dll"]
