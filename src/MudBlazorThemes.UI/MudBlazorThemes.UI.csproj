@@ -7,6 +7,7 @@
     <UserSecretsId>14c27eb2-8fb1-4121-a349-9d55e3b88f6f</UserSecretsId>
     <ScopedCssEnabled>true</ScopedCssEnabled>      
     <ApplicationIcon>wwwroot\ThemeCreator.ico</ApplicationIcon>      
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>      
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,6 +26,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
   </ItemGroup>
 
 
