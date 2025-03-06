@@ -42,7 +42,7 @@ jobs:
     - name: Build Docker Image
       run: |
         docker build --no-cache -t mudblazorthemecreator -f ${{ github.workspace }}/src/MudBlazorThemes.UI/Dockerfile \
-          --build-arg BUILD_CONFIGURATION=Release \
+          --build-arg BUILD_CONFIGURATION=Debug \
           --build-arg DB_NAME=${{ secrets.DBNAME }} \
           --build-arg DB_PORT=${{ secrets.DBPORT }} \
           --build-arg DB_USER=${{ secrets.DBUSER }} \
