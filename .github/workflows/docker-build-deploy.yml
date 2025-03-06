@@ -41,7 +41,15 @@ jobs:
 
     - name: Build Docker Image
       run: |
-        docker build --no-cache -t mudblazorthemecreator -f ${{ github.workspace }}/ThemeCreatorMudBlazor.UI/Dockerfile --build-arg BUILD_CONFIGURATION=Release .
+        docker build --no-cache -t mudblazorthemecreator -f ${{ github.workspace }}/src/MudBlazorThemes.UI/Dockerfile \
+          --build-arg BUILD_CONFIGURATION=Release \
+          --build-arg DB_NAME=${{ secrets.DBNAME }} \
+          --build-arg DB_PORT=${{ secrets.DBPORT }} \
+          --build-arg DB_USER=${{ secrets.DBUSER }} \
+          --build-arg DB_PASSWORD=${{ secrets.DBPASSWORD }} \
+          --build-arg GIT_DOMAIN=${{ secrets.GITDOMAIN }} \
+          --build-arg GIT_CLIENTID=${{ secrets.GITCLIENTID }} \
+          .
     
     - name: Docker Image Metadata
       id: meta
