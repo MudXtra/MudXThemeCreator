@@ -309,21 +309,21 @@ namespace MudBlazorThemes.DAL.Services
                 }
 
                 // 2. PaletteLight
-                Match plMatch = Regex.Match(fullContent, @"PaletteLight\s*=\s*new\s*PaletteLight\s*\(\s*\)\s*\{([\s\S]*?)\}");
+                Match plMatch = Regex.Match(fullContent, @"PaletteLight\b.*?\{([\s\S]*)\}", RegexOptions.Singleline);
                 if (plMatch.Success)
                 {
                     themeData["PaletteLight"] = ParseKeyValuePairs(plMatch.Groups[1].Value);
                 }
 
                 // 3. PaletteDark
-                Match pdMatch = Regex.Match(fullContent, @"PaletteDark\s*=\s*new\s*PaletteDark\s*\(\s*\)\s*\{([\s\S]*?)\}");
+                Match pdMatch = Regex.Match(fullContent, @"PaletteDark\b.*?\{([\s\S]*)\}", RegexOptions.Singleline);
                 if (pdMatch.Success)
                 {
                     themeData["PaletteDark"] = ParseKeyValuePairs(pdMatch.Groups[1].Value);
                 }
 
                 // 4. LayoutProperties
-                Match lpMatch = Regex.Match(fullContent, @"LayoutProperties\s*=\s*new\s*LayoutProperties\s*\(\s*\)\s*\{([\s\S]*?)\}");
+                Match lpMatch = Regex.Match(fullContent, @"LayoutProperties\b.*?\{([\s\S]*)\}", RegexOptions.Singleline);
                 if (lpMatch.Success)
                 {
                     themeData["LayoutProperties"] = ParseKeyValuePairs(lpMatch.Groups[1].Value);
@@ -351,7 +351,7 @@ namespace MudBlazorThemes.DAL.Services
                 }
 
                 // 6. ZIndex
-                Match ziMatch = Regex.Match(fullContent, @"ZIndex\s*=\s*new\s*ZIndex\s*\(\s*\)\s*\{([\s\S]*?)\}");
+                Match ziMatch = Regex.Match(fullContent, @"ZIndex\b.*?\{([\s\S]*)\}", RegexOptions.Singleline);
                 if (ziMatch.Success)
                 {
                     themeData["ZIndex"] = ParseKeyValuePairs(ziMatch.Groups[1].Value);

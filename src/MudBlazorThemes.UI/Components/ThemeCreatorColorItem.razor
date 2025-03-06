@@ -1,7 +1,7 @@
 
 <div class="mud-list-item-clickable mud-ripple pr-4 py-1 mud-width-full" @onclick="ToggleOpen">
     <MudStack Row AlignItems="AlignItems.Center" Class="pl-0 ml-0">
-            <MudText Typo="Typo.body2" Class="left-text">@Name</MudText>
+        <MudText Typo="Typo.body2" Class="left-text">@Name</MudText>
         <MudIcon Class="palette-picker-icon" Icon="@Icons.Material.Filled.Palette" Style="@($"color: {DefaultColor}; stroke: {DarkThemeBorder}")" Size="Size.Small" />
     </MudStack>
 </div>
@@ -21,7 +21,7 @@
                 &nbsp;
                 <MudTooltip Text="Save Changes">
                     <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.Save" OnClick="@SaveAndClose" />
-                </MudTooltip>                
+                </MudTooltip>
                 <MudTooltip Text="Revert to original color">
                     <MudIconButton Size="Size.Small" Icon="@Icons.Material.Outlined.Cancel" OnClick="@CancelOpen" />
                 </MudTooltip>
@@ -33,7 +33,7 @@
             <MudSpacer />
             <MudTooltip Text="Copy From Primary Color">
                 <SnackbarChip @ref="primaryColorSnackbarChip" IconToShow="@Icons.Material.Filled.Palette" OnClick="@(() => CopyFrom("primary"))"
-                              Color="Color.Primary" Style="@($"color: {initialPrimary} !important;")"  />
+                              Color="Color.Primary" Style="@($"color: {initialPrimary} !important;")" />
             </MudTooltip>
             <MudTooltip Text="Copy From Secondary Color">
                 <SnackbarChip @ref="secondaryColorSnackbarChip" IconToShow="@Icons.Material.Filled.Palette" OnClick="@(() => CopyFrom("secondary"))"
@@ -52,6 +52,6 @@
             </MudToggleGroup>
         </div>
         <MudColorPicker Class="py-0 my-0" ShowToolbar="false" ColorPickerView="@_view" @bind-Value="@ThemeColor"
-        PickerVariant="PickerVariant.Static" Elevation="0" @bind-Value:after="UpdateColorAfter" @onmousedown="@OnMouseDown" />
+                        PickerVariant="PickerVariant.Static" Elevation="0" @bind-Value:after="UpdateColorAsync" @onmousedown="@OnMouseDown" />
     </DialogContent>
 </MudDialog>

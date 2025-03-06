@@ -175,7 +175,11 @@
                         <MudMenuItem OnClick="() => SetButtonText(3)">Reply & Delete</MudMenuItem>
                     </MudMenu>
                 </MudButtonGroup>
-                <MudButton Onclick="@(() => NotifierService.SetSearchTerm("ActionDisabled"))" Variant="Variant.Filled" Disabled Class="ma-2">Disabled</MudButton>
+                <span @onclick="@(() => NotifierService.SetSearchTerm("ActionDisabled"))">
+                    <MudButton Variant="Variant.Filled" Disabled Class="ma-2">
+                        Disabled
+                    </MudButton>
+                </span>
             </MudText>
             <br />
             <MudText>
@@ -190,7 +194,9 @@
                     <MudButton Color="Color.Tertiary" OnClick="@(() => _activeButtonId = 1)" Variant="@(_activeButtonId == 1 ? Variant.Filled : Variant.Outlined)">Active</MudButton>
                     <MudButton Color="Color.Tertiary" OnClick="@(() => _activeButtonId = 2)" Variant="@(_activeButtonId == 2 ? Variant.Filled : Variant.Outlined)">InActive</MudButton>
                 </MudButtonGroup>
-                <MudButton Onclick="@(() => NotifierService.SetSearchTerm("ActionDisabled"))" Variant="Variant.Outlined" Disabled Class="ma-2">Disabled</MudButton>
+                <span @onclick="@(() => NotifierService.SetSearchTerm("ActionDisabled"))">
+                    <MudButton Variant="Variant.Outlined" Disabled Class="ma-2">Disabled</MudButton>
+                </span>                
             </MudText>
             <MudText>
                 <b>Text: </b>
@@ -200,7 +206,9 @@
                 <MudButton Variant="Variant.Text" Class="ma-2"><MudText Typo="Typo.body2">Body2</MudText></MudButton>
                 <MudButton Variant="Variant.Text" Class="ma-2"><MudText Typo="Typo.caption">Caption</MudText></MudButton>
                 <MudButton Variant="Variant.Text" Class="ma-2"><MudText Typo="Typo.overline">Overline</MudText></MudButton>
-                <MudButton Onclick="@(() => NotifierService.SetSearchTerm("ActionDisabled"))" Variant="Variant.Text" Disabled Class="ma-2">Disabled</MudButton>
+                <span @onclick="@(() => NotifierService.SetSearchTerm("ActionDisabled"))">
+                    <MudButton Variant="Variant.Text" Disabled Class="ma-2">Disabled</MudButton>
+                </span>                
             </MudText>
         </MudPaper>
     </MudItem>

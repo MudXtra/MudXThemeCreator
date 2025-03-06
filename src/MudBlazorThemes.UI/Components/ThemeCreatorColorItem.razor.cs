@@ -182,19 +182,12 @@ namespace MudBlazorThemes.UI.Components
             if (!_saveClose)
                 await ColorChanged.InvokeAsync(firstOpenedColor);
         }
-        
+
         private async Task OnMouseDown(MouseEventArgs e)
         {
             // add a mouseup event to update the color when the user releases the mouse button
             if (_view == ColorPickerView.Spectrum)
                 await JsRuntime.InvokeVoidAsync("attachMouseUp", _dotNetRef);
-        }
-
-        private Task UpdateColorAfter()
-        {
-            if (_view != ColorPickerView.Spectrum)
-                return UpdateColorAsync();
-            return Task.CompletedTask;
         }
 
         [JSInvokable]

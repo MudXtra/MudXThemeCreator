@@ -10,3 +10,7 @@ window.attachMouseUp = (dotNetHelper) => {
     };
     window.addEventListener("mouseup", onMouseUp);
 };
+
+window.getEditableContent = (element) => {
+    return element.innerText || '';
+};

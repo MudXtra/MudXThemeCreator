@@ -126,3 +126,11 @@
 	overflow: auto;
 	height: 100%;
 }
+
+.editable-div {
+    min-height: 100px;
+    padding: 8px;
+    outline: none;
+    max-height: 5lh;
+    overflow-y: auto;
+}
