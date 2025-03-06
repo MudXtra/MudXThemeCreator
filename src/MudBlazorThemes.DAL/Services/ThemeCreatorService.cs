@@ -511,7 +511,7 @@ namespace MudBlazorThemes.DAL.Services
                 CustomTheme? customTheme;
 
                 // Check if we're updating an existing theme or creating a new one
-                if (themeState.ThemeId > 0 && (themeState.UserName == userName) || superUser)
+                if (themeState.ThemeId > 0 && (themeState.UserName == userName || superUser))
                 {
                     customTheme = await context.CustomThemes
                         .FirstOrDefaultAsync(x => x.Id == themeState.ThemeId);

@@ -40,7 +40,6 @@ namespace MudBlazorThemes.UI.Components
         public StyleService StyleService { get; set; } = default!;
 
         public MudColor ThemeColor { get; set; } = new MudColor();
-        private MudColor? lastColor;
         private MudColor firstOpenedColor = new();
 
         private SnackbarChip primaryColorSnackbarChip = default!;
@@ -51,6 +50,12 @@ namespace MudBlazorThemes.UI.Components
         private string initialPrimary = string.Empty;
         private string initialSecondary = string.Empty;
         private string initialTertiary = string.Empty;
+        private DotNetObjectReference<ThemeCreatorColorItem> _dotNetRef = default!;
+        protected override void OnAfterRender(bool firstRender)
+        {
+            base.OnAfterRender(firstRender);
+            _dotNetRef = DotNetObjectReference.Create(this);
+        }
 
         private async Task CopyColor()
         {
@@ -96,7 +101,6 @@ namespace MudBlazorThemes.UI.Components
             if (result)
             {
                 ThemeColor = mudColor;
-                lastColor = mudColor;
                 await UpdateColorAsync();
                 ShowNotification("Color pasted from " + StringExtensions.ToUpper(colorType, true), Severity.Info, chip);
                 StateHasChanged();
@@ -105,11 +109,8 @@ namespace MudBlazorThemes.UI.Components
 
         private async Task UpdateColorAsync()
         {
-            await InvokeAsync(async () =>
-            {
-                ArgumentNullException.ThrowIfNull(lastColor); // should never be null.
-                await ColorChanged.InvokeAsync(lastColor);
-            });
+            if (ThemeColor != null)
+                await ColorChanged.InvokeAsync(ThemeColor);
         }
 
         private async Task PasteColor()
@@ -122,7 +123,6 @@ namespace MudBlazorThemes.UI.Components
                 {
                     MudColor mudColor = new(pastedColor);
                     ThemeColor = mudColor;
-                    lastColor = mudColor;
                     await UpdateColorAsync();
                     ShowNotification("Color pasted from clipboard", Severity.Info, pasteColorSnackbarChip);
                 }
@@ -156,13 +156,8 @@ namespace MudBlazorThemes.UI.Components
         private async Task SaveAndClose()
         {
             _saveClose = true;
+            await UpdateColorAsync();
             await ToggleOpen();
-        }
-
-        private void ViewChanged(ColorPickerView value)
-        {
-            _view = value;
-            InvokeAsync(StateHasChanged);
         }
 
         private async Task ToggleOpen()
@@ -187,17 +182,19 @@ namespace MudBlazorThemes.UI.Components
             if (!_saveClose)
                 await ColorChanged.InvokeAsync(firstOpenedColor);
         }
-
-        public void UpdateColor(MudColor value)
-        {
-            ThemeColor = value;
-            lastColor = value;
-        }
-
+        
         private async Task OnMouseDown(MouseEventArgs e)
         {
             // add a mouseup event to update the color when the user releases the mouse button
-            await JsRuntime.InvokeVoidAsync("attachMouseUp", DotNetObjectReference.Create(this));
+            if (_view == ColorPickerView.Spectrum)
+                await JsRuntime.InvokeVoidAsync("attachMouseUp", _dotNetRef);
+        }
+
+        private Task UpdateColorAfter()
+        {
+            if (_view != ColorPickerView.Spectrum)
+                return UpdateColorAsync();
+            return Task.CompletedTask;
         }
 
         [JSInvokable]
