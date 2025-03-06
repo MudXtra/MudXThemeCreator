@@ -1,0 +1,17 @@
+@inject NavigationManager Navigation
+
+<AuthorizeView>
+    <Authorized>
+        <MudTooltip Text="User Profile">
+            <MudIconButton Href="/profile" Icon="@Icons.Material.Outlined.Person" Color="Color.Inherit" UserAttributes="@(new Dictionary<string, object> { {"alt", "User Profile"} })" />
+        </MudTooltip>
+        <MudTooltip Text="Logout">
+            <MudIconButton Icon="@Icons.Material.Outlined.VpnKeyOff" Class="mx-2" Href="Account/Logout" Color="Color.Info" UserAttributes="@(new Dictionary<string, object> { {"alt", "Logout"} })" />
+        </MudTooltip>       
+    </Authorized>
+    <NotAuthorized>
+        <MudTooltip Text="Login">
+            <MudIconButton Icon="@Icons.Material.Outlined.VpnKey" Class="mx-2" Href="Account/Login" Color="Color.Info" UserAttributes="@(new Dictionary<string, object> { {"alt", "Login"} })" />
+        </MudTooltip>
+    </NotAuthorized>
+</AuthorizeView>

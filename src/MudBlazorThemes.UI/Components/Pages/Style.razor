@@ -1,0 +1,323 @@
+@page "/style"
+@using MudBlazor.Utilities
+@inject StyleService styleService
+@inject IThemeCreatorService themeCreatorService
+@inject IThemeStateService ThemeStateService
+
+<HeadContent>
+    <meta name="description" content="A page dedicated to polling the theme created for current variable valus var(--mud-palette-*)." />
+    <meta property="og:description" content="A page dedicated to polling the theme created for current variable valus var(--mud-palette-*)." />
+</HeadContent>
+<PageTitle>MudBlazor CSS Variable Style Lookup</PageTitle>
+<style>
+    .mud-list-item-text > .mud-typography {
+    white-space: nowrap; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+    max-width: 100%; 
+    }
+
+    .autocomplete-list {
+    position: absolute;
+    max-height: 500px;
+    overflow-y: auto;
+    width: 300px;
+    color: var(--mud-palette-drawer-text);
+    background-color: var(--mud-palette-drawer-background); 
+    z-index: 1000; 
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); 
+    border: 1px solid var(--mud-palette-drawer-icon); 
+    border-radius: var(--mud-default-borderradius);
+    }
+
+    .style-chip {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--mud-palette-drawer-icon);
+    }
+</style>
+<MudText Typo="Typo.h3">CSS Variable Style Lookup</MudText>
+<br />
+<MudTextField @ref="_searchField" Disabled="@cssDisabled" ValueChanged="@((string v) => CssVariableChanged(v))" Value="@cssVariable" Style="width: 300px;" Variant="Variant.Outlined" Immediate="true"
+Placeholder="e.g. --mud-palette-primary" Label="Variable to Lookup" FullWidth="false" OnKeyDown="@KeyDown"
+HelperText="Start Typing to search" @ondblclick="FillAutoCompleteList"
+Adornment="Adornment.End" AdornmentIcon="@(cssVariable.Length > 1 ? Icons.Material.Filled.Clear : string.Empty)" OnAdornmentClick="@CssValueClear" />
+@if (AutoCompleteItems != null && AutoCompleteItems.Count > 0)
+{
+    <MudList Class="autocomplete-list" T="string" @bind-SelectedValue="@selectedAutoCompleteItem" SelectionMode="SelectionMode.SingleSelection">
+        @foreach (var item in AutoCompleteItems)
+        {
+            <MudListItem OnClick="@(() =>CssValueSelect(@item))" Text="@item" />
+        }
+    </MudList>
+}
+
+<MudTable Class="mt-4" T="ResponseItem" Items="responseList">
+    <ColGroup>
+        <col style="max-width: 40%;" />
+        <col style="max-width: 30%;" />
+        <col style="max-width: 30%;" />
+    </ColGroup>
+    <HeaderContent>
+        <MudTh>
+            Variable Searched
+        </MudTh>
+        <MudTh>
+            Response Received
+        </MudTh>
+        <MudTh>
+            Color (If Valid)
+        </MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Variable">
+            <b data-tooltip="@context.Tooltip">@context.Variable</b>
+        </MudTd>
+        <MudTd DataLabel="Response">
+            @context.Response
+        </MudTd>
+        <MudTd DataLabel="Color">
+            <MudChip T="string" Class="style-chip" Style="@ResponseToColor(context.Response)"> </MudChip>
+        </MudTd>
+    </RowTemplate>
+</MudTable>
+<ExportAd />
+@code {
+    private string cssVariable = string.Empty;
+    private bool cssDisabled = false;
+    private List<ResponseItem> responseList = [];
+    private MudTextField<string> _searchField = default!;
+    private List<string> AutoCompleteItems = [];
+    private Dictionary<string, List<string>> cssVariableLookup = [];
+    private string selectedAutoCompleteItem = string.Empty;
+    private int selectedAutoCompleteIndex = -1;
+
+    // Create inverted index for searching
+    protected async override Task OnInitializedAsync()
+    {
+        var themeSelections = await themeCreatorService.GetThemeSelectionsAsync(1);
+        var customLayouts = await themeCreatorService.GetCustomLayoutsAsync(1);
+        var customShadows = await themeCreatorService.GetCustomShadowsAsync(1);
+        var customTypographies = await themeCreatorService.GetCustomTypographiesAsync(1);
+        var customZindexes = await themeCreatorService.GetCustomZIndexesAsync(1);
+
+        var tempcssVariableLookup = themeSelections
+            .Select(x => new KeyValuePair<string, string>(x.ThemeName, x.CssVariable ?? string.Empty))
+            .Concat(customLayouts.Select(x => new KeyValuePair<string, string>(x.Name, x.CssVariable ?? string.Empty)))
+            .Concat(customShadows.Select(x => new KeyValuePair<string, string>($"{x.Name}-{x.Index}", x.CssVariable ?? string.Empty)))
+            .Concat(customTypographies.Select(x => new KeyValuePair<string, string>($"{x.Name}-{x.TypoType}", x.CssVariable ?? string.Empty)))
+            .Concat(customZindexes.Select(x => new KeyValuePair<string, string>(x.Name, x.CssVariable ?? string.Empty)))
+            .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+
+        // Build the inverted index
+        var invertedIndex = new Dictionary<string, List<string>>();
+
+        // Iterate through the dictionary
+        foreach (var entry in tempcssVariableLookup)
+        {
+            // Remove leading dashes and split on dash
+            var words = entry.Value.TrimStart('-').Split('-');
+
+            foreach (var word in words)
+            {
+                if (!invertedIndex.ContainsKey(word))
+                {
+                    invertedIndex[word] = new List<string>();
+                }
+
+                // Add the full CssVariable to the list for the current word
+                invertedIndex[word].Add(entry.Value);
+            }
+        }
+
+        cssVariableLookup = invertedIndex;
+    }
+
+    private string ResponseToColor(string response)
+    {
+        if (response.Contains("Failure"))
+        {
+            return "background-color: transparent;";
+        }        
+        if (response.Contains("#") || response.Contains("rgb", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"background-color: {response};";
+        }
+        return "display: none"; ;
+    }
+
+    private void FillAutoCompleteList()
+    {
+        if (AutoCompleteItems.Count == 0)
+        {
+            AutoCompleteItems = GetAllCssVariables().ToList();
+        }
+    }
+
+    // Allow "enter" to search
+    private async Task KeyDown(KeyboardEventArgs eventArgs)
+    {
+        if (eventArgs.Key.Equals("Enter"))
+        {
+            if (AutoCompleteItems.Count > 0)
+            {
+                if (selectedAutoCompleteIndex > -1 &&
+                    AutoCompleteItems.Count > selectedAutoCompleteIndex)
+                {
+                    var item = AutoCompleteItems[selectedAutoCompleteIndex];
+                    cssVariable = item != null ? item : AutoCompleteItems[0];
+                }
+            }
+            await CssValueLookup();
+            await _searchField.ResetAsync();
+            await _searchField.FocusAsync();
+            return;
+        }
+        if (eventArgs.Key.Equals("Esc"))
+        {
+            AutoCompleteItems.Clear();
+            await _searchField.ResetAsync();
+            await _searchField.FocusAsync();
+            return;
+        }
+        // switch on key up, down arrows
+        if (eventArgs.Key.Equals("ArrowDown"))
+        {
+            if (AutoCompleteItems.Count  == 0)
+            {
+                AutoCompleteItems = GetAllCssVariables().ToList();
+                return;
+            }
+            selectedAutoCompleteIndex = Math.Min(selectedAutoCompleteIndex + 1, AutoCompleteItems.Count - 1);
+            selectedAutoCompleteItem = AutoCompleteItems[selectedAutoCompleteIndex];
+        }
+        else if (eventArgs.Key.Equals("ArrowUp") && AutoCompleteItems.Count > 0)
+        {
+            selectedAutoCompleteIndex = Math.Max(selectedAutoCompleteIndex - 1, 0);
+            selectedAutoCompleteItem = AutoCompleteItems[selectedAutoCompleteIndex];
+        }
+    }
+
+    private async Task CssValueSelect(string value)
+    {
+        cssVariable = value;
+        AutoCompleteItems.Clear();
+        await CssValueLookup();
+    }
+
+    private async Task CssValueClear()
+    {
+        await CssVariableChanged(string.Empty);
+    }
+
+    private async Task CssVariableChanged(string value)
+    {
+        cssVariable = value ?? string.Empty;
+
+        // Split the input into search terms using '-' and ' ' 
+        string[] searchVariables = cssVariable.TrimStart('-')
+            .Split(new[] { '-', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+        // Clear the autocomplete suggestions if it's empty
+        if (searchVariables.Length == 0)
+        {
+            AutoCompleteItems.Clear();
+            return;
+        }
+
+        // Create a set to store matches
+        var matchingCssVariables = new HashSet<string>();
+
+        foreach (var searchVariable in searchVariables)
+        {
+            // Refine matchingCssVariables based on each search term
+            matchingCssVariables = GetMatchingItems(matchingCssVariables, searchVariable);
+        }
+
+        // Update the autocomplete items
+        AutoCompleteItems = matchingCssVariables.ToList();
+        selectedAutoCompleteIndex = -1;
+        selectedAutoCompleteItem = string.Empty;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private HashSet<string> GetMatchingItems(HashSet<string> matchingCssVariables, string searchVariable)
+    {
+        // If matchingCssVariables is empty, it's the first search, so we search through the full dictionary
+        if (matchingCssVariables.Count == 0)
+        {
+            foreach (var word in cssVariableLookup.Keys)
+            {
+                if (word.Contains(searchVariable, StringComparison.OrdinalIgnoreCase))
+                {
+                    // Add all corresponding full CSS variable values to the set
+                    foreach (var cssVar in cssVariableLookup[word])
+                    {
+                        matchingCssVariables.Add(cssVar); // Avoid duplicates
+                    }
+                }
+            }
+        }
+        else
+        {
+            // Refine the current matching set by removing non-matching items
+            matchingCssVariables.RemoveWhere(cssVar =>
+                !cssVar.Contains(searchVariable, StringComparison.OrdinalIgnoreCase));
+        }
+
+        return matchingCssVariables;
+    }
+
+    private HashSet<string> GetAllCssVariables()
+    {
+        var allVariables = new HashSet<string>();
+        foreach (var variableList in cssVariableLookup.Values)
+        {
+            foreach (var variable in variableList)
+            {
+                allVariables.Add(variable);
+            }
+        }
+        return allVariables;
+    }
+
+    private async Task CssValueLookup()
+    {
+        if (string.IsNullOrWhiteSpace(cssVariable))
+        {
+            return;
+        }
+        cssDisabled = true;
+        StateHasChanged();
+        string response = string.Empty;
+        try
+        {
+            response = await styleService.GetComputedStylePropertyAsync(cssVariable) ?? "N/A";
+        } catch (Exception ex)
+        {
+            response = "Failure -- " + ex.Message;
+        }
+        if (string.IsNullOrWhiteSpace(response))
+        {
+            response = "Failure to locate variable.";
+        }
+        responseList.Insert(0, new ResponseItem(cssVariable, response, GetNameLookup(cssVariable)));
+        cssDisabled = false;
+        await _searchField.ResetAsync();
+        await _searchField.FocusAsync();
+    }
+
+    private string GetNameLookup(string variable)
+    {
+        return new[]
+        {
+        ThemeStateService.SelectedThemes.FirstOrDefault(x => x.CssVariable!.Contains(variable, StringComparison.InvariantCultureIgnoreCase))?.ThemeName,
+        ThemeStateService.SelectedLayouts.FirstOrDefault(x => x.CssVariable.Contains(variable, StringComparison.InvariantCultureIgnoreCase))?.Name,
+        ThemeStateService.SelectedShadows.FirstOrDefault(x => x.CssVariable.Contains(variable, StringComparison.InvariantCultureIgnoreCase))?.Name,
+        ThemeStateService.SelectedTypographies.FirstOrDefault(x => x.CssVariable.Contains(variable, StringComparison.InvariantCultureIgnoreCase))?.Name,
+        ThemeStateService.SelectedZIndexes.FirstOrDefault(x => x.CssVariable.Contains(variable, StringComparison.InvariantCultureIgnoreCase))?.Name
+    }.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x)) ?? string.Empty;
+    }
+
+    public record ResponseItem(string Variable, string Response, string Tooltip) { }
+}

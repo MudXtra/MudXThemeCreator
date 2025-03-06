@@ -1,0 +1,57 @@
+
+<div class="mud-list-item-clickable mud-ripple pr-4 py-1 mud-width-full" @onclick="ToggleOpen">
+    <MudStack Row AlignItems="AlignItems.Center" Class="pl-0 ml-0">
+        <MudText Typo="Typo.body2" Class="left-text">@Name</MudText>
+        <MudIcon Class="palette-picker-icon" Icon="@Icons.Material.Filled.Palette" Style="@($"color: {DefaultColor}; stroke: {DarkThemeBorder}")" Size="Size.Small" />
+    </MudStack>
+</div>
+<!-- Tryblazor version: https://try.mudblazor.com/snippet/wkGybuaSrnvujsOP -->
+
+<MudDialog @bind-Visible="_isOpen" Options="_dialogOptions" OnBackdropClick="CancelOpen">
+    <TitleContent>
+        <MudStack Class="ma-0 pa-0 mt-n1 mb-1 mr-n1" Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+            <MudText Style="max-width: 190px; user-select: none;" Class="left-text" Typo="Typo.h6">Edit @Name</MudText>
+            <MudStack Row Spacing="1" Justify="Justify.FlexEnd">
+                <MudTooltip Text="Copy Color to Clipboard">
+                    <SnackbarChip @ref="copyColorSnackbarChip" IconToShow="@Icons.Material.Filled.ContentCopy" OnClick="@CopyColor" />
+                </MudTooltip>
+                <MudTooltip Text="Paste Color from Clipboard">
+                    <SnackbarChip @ref="pasteColorSnackbarChip" IconToShow="@Icons.Material.Filled.ContentPaste" OnClick="@PasteColor" />
+                </MudTooltip>
+                &nbsp;
+                <MudTooltip Text="Save Changes">
+                    <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.Save" OnClick="@SaveAndClose" />
+                </MudTooltip>
+                <MudTooltip Text="Revert to original color">
+                    <MudIconButton Size="Size.Small" Icon="@Icons.Material.Outlined.Cancel" OnClick="@CancelOpen" />
+                </MudTooltip>
+            </MudStack>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <div style="display: flex; justify-content: flex-end; width: 100%; margin-bottom: 8px;margin-top: 0px;">
+            <MudSpacer />
+            <MudTooltip Text="Copy From Primary Color">
+                <SnackbarChip @ref="primaryColorSnackbarChip" IconToShow="@Icons.Material.Filled.Palette" OnClick="@(() => CopyFrom("primary"))"
+                              Color="Color.Primary" Style="@($"color: {initialPrimary} !important;")" />
+            </MudTooltip>
+            <MudTooltip Text="Copy From Secondary Color">
+                <SnackbarChip @ref="secondaryColorSnackbarChip" IconToShow="@Icons.Material.Filled.Palette" OnClick="@(() => CopyFrom("secondary"))"
+                              Color="Color.Secondary" Style="@($"color: {initialSecondary} !important;")" />
+            </MudTooltip>
+            <MudTooltip Text="Copy From Tertiary Color">
+                <SnackbarChip @ref="tertiaryColorSnackbarChip" IconToShow="@Icons.Material.Filled.Palette" OnClick="@(() => CopyFrom("tertiary"))"
+                              Color="Color.Tertiary" Style="@($"color: {initialTertiary} !important;")" />
+            </MudTooltip>
+            <MudSpacer />
+            <MudToggleGroup T="ColorPickerView" SelectionMode="SelectionMode.SingleSelection" @bind-Value="@_view"
+                            Color="Color.Primary" Class="mr-4">
+                <MudToggleItem Value="ColorPickerView.Spectrum"><MudIcon Size="Size.Small" Icon="@Icons.Material.Filled.Tune" /></MudToggleItem>
+                <MudToggleItem Value="ColorPickerView.Grid"><MudIcon Size="Size.Small" Icon="@Icons.Material.Filled.Apps" /></MudToggleItem>
+                <MudToggleItem Value="ColorPickerView.Palette"><MudIcon Size="Size.Small" Icon="@Icons.Material.Filled.Palette" /></MudToggleItem>
+            </MudToggleGroup>
+        </div>
+        <MudColorPicker Class="py-0 my-0" ShowToolbar="false" ColorPickerView="@_view" @bind-Value="@ThemeColor"
+                        PickerVariant="PickerVariant.Static" Elevation="0" @bind-Value:after="UpdateColorAsync" @onmousedown="@OnMouseDown" />
+    </DialogContent>
+</MudDialog>

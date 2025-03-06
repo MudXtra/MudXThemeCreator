@@ -1,0 +1,173 @@
+@using System.Security.Claims
+@inherits LayoutComponentBase
+@inject NavigationManager NavManager
+@inject IThemeStateService ThemeState
+@inject IThemeCreatorService ThemeService
+@inject ISnackbar Snackbar
+@inject ILogger<MainLayout> LogService
+@inject AuthenticationStateProvider AuthProvider
+
+<MudThemeProvider @bind-IsDarkMode="_isDarkMode" />
+<MudDialogProvider BackdropClick="false" CloseOnEscapeKey="true" CloseButton="true" />
+<MudSnackbarProvider />
+<MudPopoverProvider />
+
+<style class="mud-theme-darklight">@_themeDarkLightCSS</style>
+<style class="mud-theme-static">@_themeStaticCSS</style>
+
+@if (_isLoading)
+{
+    ﻿<div class="d-flex justify-center align-center main-loading">
+        <MudImage Fluid="true" Src="ThemeCreator.png" ObjectPosition="ObjectPosition.Center" Style="height: 70vh;" />
+        <MudProgressCircular Indeterminate="true"
+        Style="height: 200px; width: 200px; z-index: 5; opacity: 0.8; position: absolute;color: #03a9f4" />
+    </div>
+}
+else
+{
+    <h1 style="visibility: collapse;color: transparent;background-color:transparent;">@GetPageTitle()</h1>
+    <CascadingValue Name="IsDarkTheme" Value="@_isDarkMode" IsFixed="false">
+        <CascadingValue Name="UserName" Value="@_userId" IsFixed="true">
+            <CascadingValue Name="SuperUser" Value="@_superUser" IsFixed="true">
+                <MudLayout>
+                    <MudAppBar Elevation="4" Fixed="true" Dense="true">
+                        <MudIconButton Color="Color.Inherit" Icon="@Icons.Material.Outlined.Menu" Edge="Edge.Start"
+                        OnClick="@(() => _themeDrawer.ToggleDrawer())" />
+                        <MudText Style="font-weight: bold;" Class="ml-3 d-flex d-md-none">Theming</MudText>
+                        <MudText Style="font-weight: bold;" Class="ml-3 d-none d-md-flex">MudBlazor Theme Creator</MudText>
+                        <MudSpacer />
+                        <MudTooltip Text="Home">
+                            <MudIconButton Href="/" UserAttributes="@(new Dictionary<string, object> { {"alt", "Home Page"} })" Icon="@Icons.Material.Outlined.Home" Color="Color.Inherit" />
+                        </MudTooltip>
+                        <MudTooltip Text="CSS Variable Lookup">
+                            <MudIconButton Href="/style" Icon="@Icons.Material.Outlined.Css" Color="Color.Inherit" UserAttributes="@(new Dictionary<string, object> { {"alt", "CSS Style Page"} })" />
+                        </MudTooltip>
+                        <MudTooltip Text="Upload Theme">
+                            <MudIconButton Href="/upload" Icon="@Icons.Material.Outlined.CloudUpload" Color="Color.Inherit" UserAttributes="@(new Dictionary<string, object> { {"alt", "Upload Theme Page"} })" />
+                        </MudTooltip>
+                        <MudTooltip Text="Export Theme">
+                            <MudIconButton Href="/export" Icon="@Icons.Material.Outlined.ImportExport" Color="Color.Inherit" UserAttributes="@(new Dictionary<string, object> { {"alt", "Export Theme to CSS/C#/CS"} })" />
+                        </MudTooltip>
+                        <MudTooltip Text="About / Issues">
+                            <MudIconButton Href="/about" Icon="@Icons.Material.Outlined.Info" Color="Color.Inherit" UserAttributes="@(new Dictionary<string, object> { {"alt", "Known Issues/About Us Page"} })" />
+                        </MudTooltip>
+                        <MudTooltip Text="Toggle Dark/Light Mode">
+                            <MudIconButton id="darkToggle" OnClick="@(() => _themeDrawer.ToggleDark())"
+                            Icon="@(!_isDarkMode ? Icons.Material.Outlined.WbSunny : Icons.Material.Outlined.NightsStay)"
+                            Color="Color.Inherit" />
+                        </MudTooltip>
+                        <LoginDisplay />
+                    </MudAppBar>
+                    <ThemeDrawer @ref="_themeDrawer" @bind-IsDrawerOpen="@_isDrawerOpen" @bind-IsDarkMode="@_isDarkMode" @bind-IsDarkMode:after="CssChanged" />
+                    <MudMainContent Class="mt-12 pa-4">
+                        <ErrorBoundary>
+                            <ChildContent>
+                                @Body
+                            </ChildContent>
+                            <ErrorContent>
+                                <Error />
+                            </ErrorContent>
+                        </ErrorBoundary>
+                    </MudMainContent>
+                </MudLayout>
+            </CascadingValue>
+        </CascadingValue>
+    </CascadingValue>
+}
+
+@code {
+    private bool _isDarkMode;
+    private bool _isDrawerOpen = true;
+    private bool _isLoading = false;
+    private bool _superUser;
+    private string _themeDarkLightCSS = string.Empty;
+    private string _themeStaticCSS = string.Empty;
+    private ThemeDrawer _themeDrawer = default!;
+    private string _userId = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            ThemeState.CustomThemes = await ThemeService.GetCustomThemesAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Failed to Load Themes, please reload the page.", Severity.Error);
+            LogService.LogError(ex.Message, ex.StackTrace);
+        }
+        ThemeState.OnChange += CssChanged;
+    }
+
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // user logged in?
+            var authState = await AuthProvider.GetAuthenticationStateAsync();
+            var user = authState?.User;
+            if (user is { Identity.IsAuthenticated: true })
+            {
+                _userId = user.Claims.FirstOrDefault(c => c.Type == "name")?.Value ?? string.Empty;
+                if (string.IsNullOrEmpty(_userId))
+                {
+                    _userId = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value ?? string.Empty;
+                }
+                _superUser = user.IsInRole("SuperUser");
+            }
+
+            // make sure theme state is initialized
+            if (!ThemeState.IsInitialized)
+            {
+                // this should only load up the saved theme if it exists
+                await ThemeState.Initialize();
+            }
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    public void Dispose()
+    {
+        ThemeState.OnChange -= CssChanged;
+    }
+
+    private void CssChanged()
+    {
+        var tempStatic = ThemeState.GenerateStaticCSS();
+        var tempDarkLight = ThemeState.GenerateDarkLightCSS(_isDarkMode);
+
+        // track whether we need to call statehaschanged
+        bool updateState = false;
+
+        if (tempStatic != _themeStaticCSS)
+        {
+            _themeStaticCSS = tempStatic;
+            updateState = true;
+        }
+        if (tempDarkLight != _themeDarkLightCSS)
+        {
+            _themeDarkLightCSS = tempDarkLight;
+            updateState = true;
+        }
+
+        // we don't need to update state especially with the style tags we have unless something has changed
+        if (updateState)
+        {
+            StateHasChanged();
+        }
+    }
+
+    private string GetPageTitle()
+    {
+        var path = NavManager?.Uri.ToLower();
+        return path switch
+        {
+            "https://themes.arctechonline.tech/about" => "About MudBlazor Theme Manager Creator / Known Issues",
+            "https://themes.arctechonline.tech/export" => "Export MudBlazor Theme",
+            "https://themes.arctechonline.tech/style" => "MudBlazor CSS Variable Style Lookup",
+            "https://themes.arctechonline.tech/upload" => "MudBlazor Theme Manager Creator Upload Section",
+            _ => "Welcome to MudBlazor Theme Manager Creator"
+        };
+    }
+}
