@@ -19,8 +19,8 @@ ARG GIT_DOMAIN
 ARG GIT_CLIENTID
 
 WORKDIR /src
-COPY ["src/MudBlazorThemes.UI/MudBlazorThemes.UI.csproj", "MudBlazorThemes.UI/"]
-COPY ["src/MudBlazorThemes.DAL/MudBlazorThemes.DAL.csproj", "MudBlazorThemes.DAL/"]
+COPY ["./MudBlazorThemes.UI.csproj", "MudBlazorThemes.UI/"]
+COPY ["../MudBlazorThemes.DAL/MudBlazorThemes.DAL.csproj", "MudBlazorThemes.DAL/"]
 RUN dotnet restore "./MudBlazorThemes.UI/MudBlazorThemes.UI.csproj"
 COPY . .
 WORKDIR "/src/MudBlazorThemes.UI"
