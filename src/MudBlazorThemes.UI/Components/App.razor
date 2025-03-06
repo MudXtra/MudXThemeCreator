@@ -1,3 +1,4 @@
+@inject NavigationManager NavigationManager
 <!DOCTYPE html>
 <html lang="en">
 
@@ -22,7 +23,7 @@
     
     <base href="/" />
 
-    <link rel="canonical" href="https://themes.arctechonline.tech" />
+    <link rel="canonical" href="@NavigationManager.Uri" />
     <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
     <link href=@Assets["_content/MudBlazor/MudBlazor.min.css"] rel="stylesheet" />
     @* <link id="mudex-styles" href="@Assets["_content/MudBlazor.Extensions/mudBlazorExtensions.min.css"]" rel="stylesheet"> *@
@@ -32,6 +33,9 @@
     <link href="@Assets["app.css"]" rel="stylesheet" />
     <link href="@Assets["ThemeCreator.ico"]" rel="icon" type="images/png" />
     <link rel="stylesheet" href="@Assets["MudBlazorThemes.UI.styles.css"]" />
+
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9521363170451553"
+            crossorigin="anonymous"></script>
 
     <HeadOutlet @rendermode="InteractiveServer" />
 </head>

@@ -128,6 +128,7 @@ app.MapGet("/Account/Logout", async (HttpContext httpContext) =>
     await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 });
 
+app.UseHttpsRedirection();
 app.MapStaticAssets();
 app.UseHttpsRedirection();
 app.UseAntiforgery();
