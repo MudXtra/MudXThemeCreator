@@ -9,8 +9,8 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["MudBlazorThemes.UI/MudBlazorThemes.UI.csproj", "MudBlazorThemes.UI/"]
-COPY ["MudBlazorThemes.DAL/MudBlazorThemes.DAL.csproj", "MudBlazorThemes.DAL/"]
+COPY ["src/MudBlazorThemes.UI/MudBlazorThemes.UI.csproj", "MudBlazorThemes.UI/"]
+COPY ["src/MudBlazorThemes.DAL/MudBlazorThemes.DAL.csproj", "MudBlazorThemes.DAL/"]
 RUN dotnet restore "./MudBlazorThemes.UI/MudBlazorThemes.UI.csproj"
 COPY . .
 WORKDIR "/src/MudBlazorThemes.UI"
