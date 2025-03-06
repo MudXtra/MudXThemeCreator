@@ -22,7 +22,7 @@ WORKDIR /src
 COPY ["./MudBlazorThemes.UI.csproj", "MudBlazorThemes.UI/"]
 COPY ["../MudBlazorThemes.DAL/MudBlazorThemes.DAL.csproj", "MudBlazorThemes.DAL/"]
 RUN dotnet restore "./MudBlazorThemes.UI/MudBlazorThemes.UI.csproj"
-COPY . .
+COPY .. .
 WORKDIR "/src/MudBlazorThemes.UI"
 RUN dotnet build "./MudBlazorThemes.UI.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
