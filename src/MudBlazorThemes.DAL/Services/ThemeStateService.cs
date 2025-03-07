@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Blazored.LocalStorage;
 using MudBlazorThemes.DAL.Interfaces;
 using MudBlazorThemes.DAL.Models;
@@ -152,23 +153,41 @@ namespace MudBlazorThemes.DAL.Services
         /// </summary>
         public async Task LoadState()
         {
-            ThemeId = await _localService.GetItemAsync<int>("selectedThemeId");
-            // if no theme found set it to 1
+            // Load ThemeId
+            ThemeId = await LoadItemAsync(_localService, "selectedThemeId", 0);
+
+            // If no valid theme found, set defaults
             if (ThemeId < 1)
             {
                 ThemeId = 1;
                 ThemeName = CustomThemes.FirstOrDefault(x => x.Id == 1)?.Name ?? string.Empty;
                 ThemeOtherText = CustomThemes.FirstOrDefault(x => x.Id == 1)?.OtherText ?? string.Empty;
-                // no need to try the rest
                 NotifyStateChanged();
                 return;
             }
-            SelectedThemes = await _localService.GetItemAsync<List<ThemeSelection>>("selectedThemes") ?? [];
-            SelectedShadows = await _localService.GetItemAsync<List<CustomShadow>>("selectedShadows") ?? [];
-            SelectedLayouts = await _localService.GetItemAsync<List<CustomLayoutProperty>>("selectedLayouts") ?? [];
-            SelectedTypographies = await _localService.GetItemAsync<List<CustomTypography>>("selectedTypographies") ?? [];
-            SelectedZIndexes = await _localService.GetItemAsync<List<CustomZIndex>>("selectedZIndexes") ?? [];
+
+            // Load other collections
+            SelectedThemes = await LoadItemAsync(_localService, "selectedThemes", new List<ThemeSelection>());
+            SelectedShadows = await LoadItemAsync(_localService, "selectedShadows", new List<CustomShadow>());
+            SelectedLayouts = await LoadItemAsync(_localService, "selectedLayouts", new List<CustomLayoutProperty>());
+            SelectedTypographies = await LoadItemAsync(_localService, "selectedTypographies", new List<CustomTypography>());
+            SelectedZIndexes = await LoadItemAsync(_localService, "selectedZIndexes", new List<CustomZIndex>());
+
             NotifyStateChanged();
+        }
+
+        private static async Task<T> LoadItemAsync<T>(ILocalStorageService localService, string key, T defaultValue)
+        {
+            try
+            {
+                return await localService.GetItemAsync<T>(key) ?? defaultValue;
+            }
+            catch (JsonException ex)
+            {
+                Console.WriteLine($"Invalid data for '{key}': {ex.Message}");
+                await localService.RemoveItemAsync(key);
+                return defaultValue;
+            }
         }
 
         /// <summary>

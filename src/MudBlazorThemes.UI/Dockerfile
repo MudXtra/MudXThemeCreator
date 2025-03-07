@@ -11,18 +11,11 @@ EXPOSE 8081
 # This stage is used to build the service project
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
-ARG DB_NAME
-ARG DB_PORT
-ARG DB_USER
-ARG DB_PASSWORD
-ARG GIT_DOMAIN
-ARG GIT_CLIENTID
-
 WORKDIR /src
-COPY ["./MudBlazorThemes.UI.csproj", "MudBlazorThemes.UI/"]
-COPY ["../MudBlazorThemes.DAL/MudBlazorThemes.DAL.csproj", "MudBlazorThemes.DAL/"]
+COPY ["MudBlazorThemes.UI/MudBlazorThemes.UI.csproj", "MudBlazorThemes.UI/"]
+COPY ["MudBlazorThemes.DAL/MudBlazorThemes.DAL.csproj", "MudBlazorThemes.DAL/"]
 RUN dotnet restore "./MudBlazorThemes.UI/MudBlazorThemes.UI.csproj"
-COPY .. .
+COPY . .
 WORKDIR "/src/MudBlazorThemes.UI"
 RUN dotnet build "./MudBlazorThemes.UI.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
@@ -30,14 +23,6 @@ RUN dotnet build "./MudBlazorThemes.UI.csproj" -c $BUILD_CONFIGURATION -o /app/b
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
 RUN dotnet publish "./MudBlazorThemes.UI.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
-
-# Set environment variables from build args
-ENV dbName=$DB_NAME
-ENV dbPort=$DB_PORT
-ENV dbUser=$DB_USER
-ENV dbPassword=$DB_PASSWORD
-ENV domain=$GIT_DOMAIN
-ENV clientId=$GIT_CLIENTID
 
 # This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
 FROM base AS final

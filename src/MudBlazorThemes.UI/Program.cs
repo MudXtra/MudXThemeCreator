@@ -3,6 +3,7 @@ using Auth0.AspNetCore.Authentication;
 using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Extensions;
 using MudBlazor.Extensions.Options;
@@ -70,18 +71,6 @@ void configMudEx(MudExConfiguration configMudEx)
 builder.Services.AddMudServicesWithExtensions(configMud, configMudEx);
 
 // Add DB connection
-using (var conn = new Npgsql.NpgsqlConnection(connString))
-{
-    try
-    {
-        conn.Open();
-        Console.WriteLine("Connected successfully!");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Failed: {ex.Message}");
-    }
-}
 builder.Services.AddDbContextFactory<ThemeDbContext>(cfg => cfg.UseNpgsql(connString));
 
 // Add other services
@@ -142,6 +131,11 @@ if (!app.Environment.IsDevelopment())
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
+
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost
+});
 
 // Add headers
 app.Use(async (context, next) =>
