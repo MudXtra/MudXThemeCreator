@@ -30,6 +30,7 @@ else
                     </div>
                 </MudExpansionPanel>
         }
+        <AdComponent />
         @foreach (ThemeOption option in themeOptions.Where(x => x.Name != "Shadows").ToList())
         {
             <MudExpansionPanel Class="ma-0 pa-0" Gutters="false" Text="@option.Name" @bind-Expanded="@panelDictionary[$"o{option.Id}"]">

@@ -81,7 +81,10 @@ Adornment="Adornment.End" AdornmentIcon="@(cssVariable.Length > 1 ? Icons.Materi
         </MudTd>
     </RowTemplate>
 </MudTable>
-<ExportAd />
+@if (!NoAds)
+{
+    <ExportAd />
+}
 @code {
     private string cssVariable = string.Empty;
     private bool cssDisabled = false;
@@ -91,6 +94,9 @@ Adornment="Adornment.End" AdornmentIcon="@(cssVariable.Length > 1 ? Icons.Materi
     private Dictionary<string, List<string>> cssVariableLookup = [];
     private string selectedAutoCompleteItem = string.Empty;
     private int selectedAutoCompleteIndex = -1;
+
+    [CascadingParameter(Name = "NoAds")]
+    public bool NoAds { get; set; }
 
     // Create inverted index for searching
     protected async override Task OnInitializedAsync()

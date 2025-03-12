@@ -100,15 +100,15 @@ namespace MudBlazorThemes.UI.Components
 
             if (result)
             {
-                ThemeColor = mudColor;
-                await UpdateColorAsync();
+                await UpdateColorAsync(mudColor);
                 ShowNotification("Color pasted from " + StringExtensions.ToUpper(colorType, true), Severity.Info, chip);
                 StateHasChanged();
             }
         }
 
-        private async Task UpdateColorAsync()
+        private async Task UpdateColorAsync(MudColor newVal)
         {
+            ThemeColor = newVal;
             if (ThemeColor != null)
                 await ColorChanged.InvokeAsync(ThemeColor);
         }
@@ -122,8 +122,7 @@ namespace MudBlazorThemes.UI.Components
                 try
                 {
                     MudColor mudColor = new(pastedColor);
-                    ThemeColor = mudColor;
-                    await UpdateColorAsync();
+                    await UpdateColorAsync(mudColor);
                     ShowNotification("Color pasted from clipboard", Severity.Info, pasteColorSnackbarChip);
                 }
                 catch
@@ -156,7 +155,7 @@ namespace MudBlazorThemes.UI.Components
         private async Task SaveAndClose()
         {
             _saveClose = true;
-            await UpdateColorAsync();
+            await UpdateColorAsync(ThemeColor);
             await ToggleOpen();
         }
 
@@ -193,7 +192,7 @@ namespace MudBlazorThemes.UI.Components
         [JSInvokable]
         public async void OnMouseUp()
         {
-            await UpdateColorAsync();
+            await UpdateColorAsync(ThemeColor);
         }
     }
 }

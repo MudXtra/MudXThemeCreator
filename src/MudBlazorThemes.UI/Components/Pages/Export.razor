@@ -1,17 +1,13 @@
 @page "/export"
 @inject IThemeStateService themeState
 <HeadContent>
-    <meta name="description" content="Allows devs to export and copy the CSS, C#, CS from MudBlazor Theme Creator to use in their own project." />
-    <meta property="og:description" content="Allows devs to export and copy the CSS, C#, CS from MudBlazor Theme Creator to use in their own project." />
+    <meta name="description" content="Allows developers to export and copy the CSS, C#, CS from MudBlazor Theme Creator to use in their own project." />
+    <meta property="og:description" content="Allows developers to export and copy the CSS, C#, CS from MudBlazor Theme Creator to use in their own project." />
 </HeadContent>
 <PageTitle>Export MudBlazor Theme in CSS or C# or CS</PageTitle>
 <MudGrid Justify="Justify.Center">
     <MudItem xs="12">
         <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.Center">
-            <MudTooltip Text="Refresh the code and css snippets">
-                <MudIconButton Class="mr-10 ml-10" Icon="@Icons.Material.Filled.Refresh" Size="Size.Large"
-                               OnClick="@RefreshData" />
-            </MudTooltip>
             <MudText Typo="Typo.h3">Export MudBlazor Theme</MudText>
         </MudStack>
     </MudItem>
@@ -19,23 +15,21 @@
     <MudItem xs="12">
         <MudPaper Elevation="2" Class="pa-4 mb-4 mud-width-full">
             <MudContainer Style="text-align: center;">
-                <MudText Typo="Typo.h6" Class="pb-2">
-                    <MudIcon Icon="@Icons.Material.Filled.Construction" Color="Color.Warning" />
-                    Experimental: Verify before using. Click the refresh icon to rebuild classes if data changes.
-                    <MudIcon Icon="@Icons.Material.Filled.Construction" Color="Color.Warning" />
-                </MudText>
                 <MudText>
                     This page will help you export your MudBlazor theme to use in your application.
                     It will provide you with a C# class to reference in your application or CSS files to include in your application.
-                    Expand one of the panels to get more information. If you change anything in the theme or select a new theme you
-                    must click the Refresh button above to regenerate the code.
+                    Expand one of the panels to get more information. If you change anything in the theme or select a new theme it will
+                    automatically update the values.
                 </MudText>
             </MudContainer>
         </MudPaper>
     </MudItem>
-    <MudItem xs="12">
-        @* <ExportAd /> *@
-    </MudItem>
+    @if (!NoAds)
+    {
+        <MudItem xs="12">
+            <ExportAd />
+        </MudItem>
+    }
 </MudGrid>
 <MudExpansionPanels Class="save-expansion-panels" MultiExpansion="true">
 
@@ -114,13 +108,27 @@
     private string themeCodeV8 = string.Empty;
     private int keyId = 0;
 
+    [CascadingParameter(Name="NoAds")]
+    public bool NoAds { get; set; }
+
     protected override void OnInitialized()
     {
-        themeLight = themeState.GenerateDarkLightCSS(false);
-        themeDark = themeState.GenerateDarkLightCSS(true);
-        themeStatic = themeState.GenerateStaticCSS();
-        themeCodeV7 = themeState.GenerateCSharpCodeV7();
-        themeCodeV8 = themeState.GenerateCSharpCodeV8();
+        base.OnInitialized();
+        themeState.OnChange += RefreshData;
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+        if (firstRender)
+        {
+            RefreshData();
+        }
+    }
+
+    public void Dispose()
+    {
+        themeState.OnChange -= RefreshData;
     }
 
     private void RefreshData()
@@ -131,5 +139,6 @@
         themeCodeV7 = themeState.GenerateCSharpCodeV7();
         themeCodeV8 = themeState.GenerateCSharpCodeV8();
         keyId++;
+        StateHasChanged();
     }
 }

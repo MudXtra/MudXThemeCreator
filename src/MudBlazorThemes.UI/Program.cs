@@ -4,6 +4,7 @@ using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Extensions;
 using MudBlazor.Extensions.Options;
@@ -95,13 +96,26 @@ builder.Services.AddAuth0WebAppAuthentication(options =>
     options.ClientId = config["clientid"]!;
 });
 
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedFor;
+});
+builder.Services.AddHttpsRedirection(options =>
+{
+    options.HttpsPort = 443;
+});
+builder.Services.Configure<HttpsRedirectionOptions>(options =>
+{
+    options.HttpsPort = 443;
+});
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+});
+
 var app = builder.Build();
 
-app.UseForwardedHeaders(new ForwardedHeadersOptions
-{
-    ForwardedHeaders = ForwardedHeaders.XForwardedProto |
-                       ForwardedHeaders.XForwardedHost
-});
+app.UseForwardedHeaders();
 
 app.UseHttpsRedirection();
 app.MapStaticAssets();

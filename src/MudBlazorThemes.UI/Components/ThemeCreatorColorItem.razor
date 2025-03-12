@@ -51,7 +51,7 @@
                 <MudToggleItem Value="ColorPickerView.Palette"><MudIcon Size="Size.Small" Icon="@Icons.Material.Filled.Palette" /></MudToggleItem>
             </MudToggleGroup>
         </div>
-        <MudColorPicker Class="py-0 my-0" ShowToolbar="false" ColorPickerView="@_view" @bind-Value="@ThemeColor"
-                        PickerVariant="PickerVariant.Static" Elevation="0" @bind-Value:after="UpdateColorAsync" @onmousedown="@OnMouseDown" />
+        <MudColorPicker Class="py-0 my-0" ShowToolbar="false" ColorPickerView="@_view" Value="@ThemeColor"
+                        PickerVariant="PickerVariant.Static" Elevation="0" ValueChanged="UpdateColorAsync" @onmousedown="@OnMouseDown" />
     </DialogContent>
 </MudDialog>
