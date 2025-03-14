@@ -6,7 +6,8 @@
 @inject ISnackbar Snackbar
 @inject ILogger<MainLayout> LogService
 @inject AuthenticationStateProvider AuthProvider
-
+<!-- TODO: Reactivate Theme, Show ID in profile, Different Users saving themes then goign back to it shows Main theme, Make sure logins persist,
+           Export didn't show correct color on export for Color.Primary, better ordering of the Theme List -->
 <MudThemeProvider @bind-IsDarkMode="_isDarkMode" />
 <MudDialogProvider BackdropClick="false" CloseOnEscapeKey="true" CloseButton="true" />
 <MudSnackbarProvider />
