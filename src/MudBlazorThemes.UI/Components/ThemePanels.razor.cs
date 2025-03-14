@@ -16,11 +16,9 @@ namespace MudBlazorThemes.UI.Components
         public List<CustomTypography> customTypographies = [];
         public List<CustomZIndex> customZIndexes = [];
         private List<string> _typoList = [];
-        private List<string> _selectedFonts = [];
         private int _typoValue = 0;
         private int _currentShadowIndex = 0;
         private readonly int _defaultThemeId = 1;
-        private int _updateKey;
         private string _searchString = string.Empty;
         private bool _isLoading = true;
 
@@ -33,13 +31,13 @@ namespace MudBlazorThemes.UI.Components
         [Parameter]
         public string SearchString { get; set; } = string.Empty;
 
-        private List<string> GetAvailableFonts()
+        private static List<string> GetAvailableFonts()
         {
             return [
-            "Arial", "Helvetica", "Times New Roman", "Times", "Courier New", "Courier",
-    "Verdana", "Georgia", "Palatino", "Garamond", "Bookman", "Comic Sans MS",
-    "Trebuchet MS", "Arial Black", "Impact"
-            ];
+                "Arial", "Helvetica", "Times New Roman", "Times", "Courier New", "Courier",
+                "Verdana", "Georgia", "Palatino", "Garamond", "Bookman", "Comic Sans MS",
+                "Trebuchet MS", "Arial Black", "Impact"
+                   ];
         }
 
         public void SearchAllPanels(string val)
@@ -76,12 +74,12 @@ namespace MudBlazorThemes.UI.Components
                     kvp => kvp.Key,
                     kvp =>
                     {
-                        if (kvp.Key.StartsWith("p"))
+                        if (kvp.Key.StartsWith('p'))
                         {
                             // Handle ThemePalette panels
                             return matchingThemeSelections.Any(); // If any themes match, show palette
                         }
-                        else if (kvp.Key.StartsWith("o"))
+                        else if (kvp.Key.StartsWith('o'))
                         {
                             // Handle ThemeOption panels
                             int optionId = int.Parse(kvp.Key[1..]);
