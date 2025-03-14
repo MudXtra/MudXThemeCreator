@@ -39,7 +39,6 @@ namespace MudBlazorThemes.UI.Components
         {
             await InvokeAsync(async () =>
             {
-                ArgumentNullException.ThrowIfNull(lastSlider); // should never be null.
                 await LayoutPropChanged.InvokeAsync(lastSlider);
             });
         }
