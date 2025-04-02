@@ -64,7 +64,7 @@ void configMudEx(MudExConfiguration configMudEx)
         BackdropClick = true,
         CloseButton = false,
         Animations = new[] { AnimationType.Pulse },
-        DragMode = MudDialogDragMode.WithoutBounds,
+        DragMode = MudDialogDragMode.Simple,
         DisableSizeMarginY = true,
         DisablePositionMargin = true
     });
