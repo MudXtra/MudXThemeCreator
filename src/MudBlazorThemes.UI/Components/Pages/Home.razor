@@ -167,22 +167,14 @@
                 <MudButton Onclick="@(() => NotifierService.SetSearchTerm("Tertiary"))" Variant="Variant.Filled" Color="Color.Tertiary" Class="ma-2">Tertiary</MudButton>
                 <MudButton Onclick="@(() => NotifierService.SetSearchTerm("Surface"))" Variant="Variant.Filled" Color="Color.Surface" Class="ma-2">Surface</MudButton>
                 <MudButton Onclick="@(() => NotifierService.SetSearchTerm("Dark"))" Variant="Variant.Filled" Color="Color.Dark" Class="ma-2">Dark</MudButton>
-                <MudButtonGroup Color="Color.Tertiary" Variant="Variant.Filled">
-                    <MudButton>@_buttonText</MudButton>
-                    <MudMenu Icon="@Icons.Material.Filled.ArrowDropDown" Style="align-self: auto;">
-                        <MudMenuItem OnClick="() => SetButtonText(0)">Reply</MudMenuItem>
-                        <MudMenuItem OnClick="() => SetButtonText(1)">Reply All</MudMenuItem>
-                        <MudMenuItem OnClick="() => SetButtonText(2)">Forward</MudMenuItem>
-                        <MudMenuItem OnClick="() => SetButtonText(3)">Reply & Delete</MudMenuItem>
-                    </MudMenu>
-                </MudButtonGroup>
+                <MudButton Onclick="@(() => NotifierService.SetSearchTerm("Divider"))" Variant="Variant.Filled" Style="background-color: var(--mud-palette-divider) !important;" Class="ma-2">Divider</MudButton>
                 <span @onclick="@(() => NotifierService.SetSearchTerm("ActionDisabled"))">
                     <MudButton Variant="Variant.Filled" Disabled Class="ma-2">
                         Disabled
                     </MudButton>
                 </span>
             </MudText>
-            <br />
+            <MudDivider Class="my-2" />
             <MudText>
                 <b>Outlined: </b>
                 <MudButton Onclick="@(() => NotifierService.SetSearchTerm("Error"))" Variant="Variant.Outlined" Color="Color.Error" Class="ma-2">Error</MudButton>
@@ -199,6 +191,7 @@
                     <MudButton Variant="Variant.Outlined" Disabled Class="ma-2">Disabled</MudButton>
                 </span>
             </MudText>
+            <MudDivider class="mt-2"/>
             <MudText>
                 <b>Text: </b>
                 <MudButton Variant="Variant.Text" Class="ma-2"><MudText Typo="Typo.subtitle1">Subtitle1</MudText></MudButton>

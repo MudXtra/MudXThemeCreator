@@ -20,7 +20,7 @@ Elevation="2" Variant="DrawerVariant.Persistent">
             <MudSelect @key="_selectKey" @bind-Value="@_themeId" @bind-Value:after="@(() => LoadTheme(_themeId))" Label="AVAILABLE THEMES" LockScroll>
                 <AuthorizeView Roles="SuperUser">
                     <Authorized>
-                        @foreach (var customTheme in _customThemes)
+                        @foreach (var customTheme in _customThemes.OrderBy(x => x.IsApproved).ThenBy(x => x.Name))
                         {
                             <MudSelectItem @key="@customTheme.Id" Value="@customTheme.Id">
                                 <MudTooltip Arrow="true" Placement="Placement.Right" Text="@customTheme.OtherText">
@@ -30,7 +30,7 @@ Elevation="2" Variant="DrawerVariant.Persistent">
                         }
                     </Authorized>
                     <NotAuthorized>
-                        @foreach (var customTheme in _customThemes.Where(x => x.IsApproved || x.UploadedBy == UserName))
+                        @foreach (var customTheme in _customThemes.OrderBy(x => x.IsApproved).ThenBy(x => x.Name).Where(x => x.IsApproved || x.UploadedBy == UserName))
                         {
                             <MudSelectItem @key="@customTheme.Id" Value="@customTheme.Id">
                                 <MudTooltip Arrow="true" Placement="Placement.Right" Text="@customTheme.OtherText">

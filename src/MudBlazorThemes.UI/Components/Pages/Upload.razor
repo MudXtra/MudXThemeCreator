@@ -80,10 +80,13 @@
                                     <MudTextField AutoGrow Class="mb-2" Label="Theme Description" HelperText="5-175 Characters" @bind-Value="_themeOtherText" @bind-Value:after="@(() => themeState.IsModified = true)" Required Validation="@(MaxLengthOtherValidation)" />
                                 </MudCardContent>
                                 <MudCardActions Class="d-flex flex-row justify-end">
+                                    <MudAlert Severity="Severity.Warning">
+                                        Theme Saving is temporarily disabled.
+                                    </MudAlert>
                                     <MudTooltip Text="Saving a theme will create a new theme for your account unless you are the owner. You can only have 5 themes per account.">
-                                        <MudButton Variant="Variant.Text" Color="Color.Primary" Disabled="@(!_success || !themeState.IsModified)" OnClick="SaveTheme">
+                                        <MudButton Variant="Variant.Text" Color="Color.Primary" Disabled="true" OnClick="SaveTheme">
                                             @(SaveUpdateTheme ? "Create New Theme" : "Update Existing Theme")
-                                        </MudButton>
+                                        </MudButton> <!-- Disabled="@(!_success || !themeState.IsModified)" -->
                                         <sup class="ml-n2" style="color: red; font-weight: bolder;">*&nbsp;</sup>
                                     </MudTooltip>
                                 </MudCardActions>
@@ -122,7 +125,6 @@
 {
     <ExportAd />
 }
-
 
 @code {
     readonly string[] AllowedExtensions = { ".css",".cs" };
