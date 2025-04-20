@@ -84,7 +84,7 @@
                                         Theme Saving is temporarily disabled.
                                     </MudAlert>
                                     <MudTooltip Text="Saving a theme will create a new theme for your account unless you are the owner. You can only have 5 themes per account.">
-                                        <MudButton Variant="Variant.Text" Color="Color.Primary" Disabled="true" OnClick="SaveTheme">
+                                        <MudButton Variant="Variant.Text" Color="Color.Primary" Disabled="@(!SuperUser)" OnClick="SaveTheme">
                                             @(SaveUpdateTheme ? "Create New Theme" : "Update Existing Theme")
                                         </MudButton> <!-- Disabled="@(!_success || !themeState.IsModified)" -->
                                         <sup class="ml-n2" style="color: red; font-weight: bolder;">*&nbsp;</sup>
