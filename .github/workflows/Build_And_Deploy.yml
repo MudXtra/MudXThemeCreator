@@ -57,4 +57,6 @@ jobs:
         docker push ghcr.io/${{ github.repository_owner }}/mudblazorthemecreator:latest
 
     - name: Display Pushed Version
-      run: echo "Pushed image: ghcr.io/${{ github.repository_owner }}/mudblazorthemecreator:latest"
+      run: |
+        echo "Pushed image: ghcr.io/${{ github.repository_owner }}/mudblazorthemecreator:latest"
+
