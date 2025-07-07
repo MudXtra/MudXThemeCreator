@@ -64,13 +64,13 @@ jobs:
 
     - name: Tag Docker image as "latest"
       run: |
-        docker tag mudblazorthemecreator ghcr.io/${{ github.repository_owner }}/mudblazorthemecreator:latest
+        docker tag mudblazorthemecreator ghcr.io/mudxtra/mudxthemecreator/mudblazorthemecreator:latest
 
     - name: Push Docker image to GHCR
       run: |
-        docker push ghcr.io/${{ github.repository_owner }}/mudblazorthemecreator:latest
+        docker push ghcr.io/mudxtra/mudxthemecreator/mudblazorthemecreator:latest
 
     - name: Display Pushed Version
       run: |
-        echo "Pushed image: ghcr.io/${{ github.repository_owner }}/mudblazorthemecreator:latest"
+        echo "Pushed image: ghcr.io/mudxtra/mudxthemecreator/mudblazorthemecreator:latest"
 
