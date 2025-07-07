@@ -49,7 +49,9 @@
                 new ChangeLogItem(ChangeWhen: DateTime.Parse("2025-03-06"), ChangeWho: "Jilael", ChangeWhy: "ReModel Application",
                 ChangeWhat: "Remove ability to maintain state changes between sessions, instead opting for an account login system. Create wizard for theme upload. Reimport and adjust all themes."),
                 new ChangeLogItem(ChangeWhen: DateTime.Parse("2025-04-20"), ChangeWho: "Jilael", ChangeWhy: "Bug Review",
-                ChangeWhat: "Fix order by display to order by personal themes yes/no, then order by theme name. Also disabled saves until bug fixes are done.")
+                ChangeWhat: "Fix order by display to order by personal themes yes/no, then order by theme name. Also disabled saves until bug fixes are done."),
+                new ChangeLogItem(ChangeWhat: DateTime.Parse("2025-07-07"), ChangeWho: "Jilael", ChangeWhy: "Dependencies, Adsense",
+                ChangeWhat: "Update dependencies to latest version and switch to mudx.org."),
                     ];
                 }
                 <ul class="px-6 py-1">
@@ -68,7 +70,7 @@
         <MudPaper Class="pa-4" Elevation="2">
             <MudText Typo="Typo.h6" Class="mb-4">
                 About -
-                <MudLink Href="https://github.com/versile2/ThemeCreatorMudBlazor" Target="_blank" rel="noopener">
+                <MudLink Href="https://github.com/MudXtra/MudXThemeCreator" Target="_blank" rel="noopener">
                     <MudImage Class="github-image" Src="github-512.webp" Alt="GitHub Logo Icon" />
                     Theme Creator GitHub Repository
                 </MudLink>
@@ -80,6 +82,7 @@
                 We are not responsible for any issues that may arise from using this tool.<br/>
                 <b>MudBlazor</b> - <MudLink Href="https://www.mudblazor.com" Target='_blank' rel="noopener">https://www.mudblazor.com</MudLink><br />
                 <b>MudEx</b> - <MudLink Href='https://www.mudex.org' Target='_blank' rel="noopener">https://www.mudex.org</MudLink>
+                <b>MudX</b> - <MudLink Href="https://www.mudx.org" Target="_blank" rel="noopener">https://www.mudx.org</MudLink>
             </MudText>
         </MudPaper>
     </MudItem>

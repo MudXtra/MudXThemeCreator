@@ -1,0 +1,76 @@
+name: 'Build and Deploy Docker Image to GHCR'
+
+on:
+  workflow_dispatch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Log in to GitHub Container Registry (GHCR)
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Delete old GHCR image versions except "latest"
+      env:
+        GHCR_PAT: ${{ secrets.GHCR_PAT }}
+        OWNER: ${{ github.repository_owner }}
+        IMAGE: mudblazorthemecreator
+      run: |
+        echo "Checking for existing versions of ghcr.io/$OWNER/$IMAGE..."
+
+        # Call the API and capture both body and status
+        RESPONSE=$(mktemp)
+        STATUS=$(curl -s -o "$RESPONSE" -w "%{http_code}" \
+          -H "Authorization: Bearer $GHCR_PAT" \
+          "https://api.github.com/orgs/$OWNER/packages/container/$IMAGE/versions")
+
+        if [ "$STATUS" = "404" ]; then
+          echo "No image exists yet in GHCR. Skipping cleanup."
+          exit 0
+        elif [ "$STATUS" != "200" ]; then
+          echo "Unexpected response ($STATUS):"
+          cat "$RESPONSE"
+          exit 1
+        fi
+
+        VERSIONS=$(jq -r '.[] | select(.metadata.container.tags | index("latest") | not) | .id' "$RESPONSE")
+
+        if [ -z "$VERSIONS" ]; then
+          echo "No old versions found to delete."
+        else
+          for VERSION_ID in $VERSIONS; do
+            echo "Deleting version $VERSION_ID"
+            curl -s -X DELETE -H "Authorization: Bearer $GHCR_PAT" \
+              "https://api.github.com/orgs/$OWNER/packages/container/$IMAGE/versions/$VERSION_ID"
+          done
+        fi
+
+    - name: Build Docker Image
+      working-directory: src
+      run: |
+        docker build --no-cache \
+          -t mudblazorthemecreator \
+          -f ./MudBlazorThemes.UI/Dockerfile \
+          --build-arg BUILD_CONFIGURATION=Release .
+
+    - name: Tag Docker image as "latest"
+      run: |
+        docker tag mudblazorthemecreator ghcr.io/${{ github.repository_owner }}/mudblazorthemecreator:latest
+
+    - name: Push Docker image to GHCR
+      run: |
+        docker push ghcr.io/${{ github.repository_owner }}/mudblazorthemecreator:latest
+
+    - name: Display Pushed Version
+      run: |
+        echo "Pushed image: ghcr.io/${{ github.repository_owner }}/mudblazorthemecreator:latest"
+
