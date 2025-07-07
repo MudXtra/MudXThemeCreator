@@ -55,10 +55,11 @@ jobs:
         fi
 
     - name: Build Docker Image
+      working-directory: src
       run: |
         docker build --no-cache \
           -t mudblazorthemecreator \
-          -f ./src/MudBlazorThemes.UI/Dockerfile \
+          -f ./MudBlazorThemes.UI/Dockerfile \
           --build-arg BUILD_CONFIGURATION=Release .
 
     - name: Tag Docker image as "latest"
