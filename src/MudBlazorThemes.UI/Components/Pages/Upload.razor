@@ -76,8 +76,20 @@
                                             }
                                         </b>
                                     </MudText>
-                                    <MudTextField Label="Theme Name" @bind-Value="_themeName" @bind-Value:after="@(() => themeState.IsModified = true)" Required Validation="@(MaxLengthNameValidation)" HelperText="5-30 Characters" />
-                                    <MudTextField AutoGrow Class="mb-2" Label="Theme Description" HelperText="5-175 Characters" @bind-Value="_themeOtherText" @bind-Value:after="@(() => themeState.IsModified = true)" Required Validation="@(MaxLengthOtherValidation)" />
+                                    <MudTextField Label="Theme Name"
+                                                  @bind-Value="_themeName"
+                                                  @bind-Value:after="@(() => themeState.IsModified = true)"
+                                                  Required
+                                                  Validation="@(new Func<string, IEnumerable<string>>(MaxLengthNameValidation))"
+                                                  HelperText="5-30 Characters" />
+                                    <MudTextField AutoGrow
+                                                  Class="mb-2"
+                                                  Label="Theme Description"
+                                                  HelperText="5-175 Characters"
+                                                  @bind-Value="_themeOtherText"
+                                                  @bind-Value:after="@(() => themeState.IsModified = true)"
+                                                  Required
+                                                  Validation="@(new Func<string, IEnumerable<string>>(MaxLengthOtherValidation))" />
                                 </MudCardContent>
                                 <MudCardActions Class="d-flex flex-row justify-end">
                                     <MudAlert Severity="Severity.Warning">

@@ -30,8 +30,8 @@ namespace MudBlazorThemes.DAL.Models
         {
             get
             {
-                return MudColor.TryParse(DarkValue ?? LightValue ?? string.Empty, out MudColor s)
-                    ? s.ToString(MudColorOutputFormats.HexA)
+                return MudColor.TryParse(DarkValue ?? LightValue ?? string.Empty, out MudColor? s)
+                    ? s!.ToString(MudColorOutputFormats.HexA)
                     : "#00000000"; // Default to transparent if parsing fails
             }
         }

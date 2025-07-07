@@ -585,7 +585,6 @@ color: var(--mud-palette-drawer-text) !important;
 
 </MudGrid>
 @code {
-    private string _buttonText = "Reply";
     private int _activeButtonId = 0;
     private IReadOnlyCollection<Color> _selectedColors = [];
 
@@ -622,25 +621,6 @@ color: var(--mud-palette-drawer-text) !important;
 
         return false;
     };
-
-    private void SetButtonText(int id)
-    {
-        switch (id)
-        {
-            case 0:
-                _buttonText = "Reply";
-                break;
-            case 1:
-                _buttonText = "Reply All";
-                break;
-            case 2:
-                _buttonText = "Forward";
-                break;
-            case 3:
-                _buttonText = "Reply & Delete";
-                break;
-        }
-    }
 
     private Task<IEnumerable<string>> Search1(string value, CancellationToken token)
     {
