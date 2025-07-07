@@ -54,6 +54,12 @@ jobs:
           done
         fi
 
+    - name: Debug
+      run: |
+        ls -la
+        ls -la MudXThemeCreator/
+        ls -la MudXThemeCreator/src/ThemeCreatorMudBlazor.UI/
+
     - name: Build Docker Image
       run: |
         docker build --no-cache \
