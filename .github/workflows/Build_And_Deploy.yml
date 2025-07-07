@@ -67,9 +67,6 @@ jobs:
         docker tag mudblazorthemecreator ghcr.io/mudxtra/mudxthemecreator/mudblazorthemecreator:latest
 
     - name: Push Docker image to GHCR
-        permissions:
-          contents: read
-          packages: write
       run: |
         docker push ghcr.io/mudxtra/mudxthemecreator/mudblazorthemecreator:latest
 
