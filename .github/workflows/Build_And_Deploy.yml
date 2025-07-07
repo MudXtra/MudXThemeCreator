@@ -58,7 +58,7 @@ jobs:
       run: |
         docker build --no-cache \
           -t mudblazorthemecreator \
-          -f ${{ github.workspace }}/src/ThemeCreatorMudBlazor.UI/Dockerfile \
+          -f ./src/ThemeCreatorMudBlazor.UI/Dockerfile
           --build-arg BUILD_CONFIGURATION=Release .
 
     - name: Tag Docker image as "latest"
