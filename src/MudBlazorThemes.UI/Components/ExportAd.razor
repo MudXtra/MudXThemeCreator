@@ -1,11 +1,6 @@
 <MudPaper Elevation="2" Class="pa-4 mb-4 mud-width-full">
     <MudContainer Style="text-align: center;">
-        <ins class="adsbygoogle"
-             style="display:block; text-align:center;"
-             data-ad-layout="in-article"
-             data-ad-format="fluid"
-             data-ad-client="ca-pub-9521363170451553"
-             data-ad-slot="2818831845"></ins>
+        @Ads
     </MudContainer>
 </MudPaper>    
 
@@ -16,18 +11,13 @@
         {
             RenderFragment form = b =>
             {
-                b.OpenElement(0, "script");
-                b.AddAttribute(0, "async", true);
-                b.AddAttribute(0, "src", "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9521363170451553");
-                b.AddAttribute(1, "crossorigin", "anonymous");
-                b.CloseElement();
                 b.OpenElement(0, "ins");
                 b.AddAttribute(0, "class", "adsbygoogle");
-                b.AddAttribute(1, "style", "display:block");
-                b.AddAttribute(2, "data-ad-format", "auto");
-                b.AddAttribute(3, "data-full-width-response", true);
+                b.AddAttribute(1, "style", "display:block;text-align:center;");
+                b.AddAttribute(2, "data-ad-layout", "in-article");
+                b.AddAttribute(3, "data-ad-format", "fluid");
                 b.AddAttribute(4, "data-ad-client", "ca-pub-9521363170451553");
-                b.AddAttribute(5, "data-ad-slot", "5291017404");
+                b.AddAttribute(5, "data-ad-slot", "2818831845"); 
                 b.CloseElement();
                 b.OpenElement(0, "script");
                 b.AddContent(0, "(adsbygoogle = window.adsbygoogle || []).push({});");

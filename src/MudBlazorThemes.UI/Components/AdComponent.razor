@@ -1,11 +1,6 @@
 
 <div style="margin-left: 8px;margin-right: 8px;border-radius: var(--mud-default-borderradius);">
-    <ins class="adsbygoogle"
-         style="display:block"
-         data-ad-format="fluid"
-         data-ad-layout-key="-hd+c+5l+e-5q"
-         data-ad-client="ca-pub-9521363170451553"
-         data-ad-slot="1543344085"></ins>   
+    @Ads
 </div>
 
 @code {
@@ -15,15 +10,11 @@
         {
             RenderFragment form = b =>
             {
-                b.OpenElement(0, "script");
-                b.AddAttribute(0, "async", true);
-                b.AddAttribute(0, "src", "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9521363170451553");
-                b.CloseElement();
                 b.OpenElement(0, "ins");
                 b.AddAttribute(0, "class", "adsbygoogle");
                 b.AddAttribute(1, "style", "display:block");
                 b.AddAttribute(2, "data-ad-format", "fluid");
-                b.AddAttribute(3, "data-ad-layout-key", "-h2+d+5c-9-3e");
+                b.AddAttribute(3, "data-ad-layout-key", "-hd+c+5l+e-5q");
                 b.AddAttribute(4, "data-ad-client", "ca-pub-9521363170451553");
                 b.AddAttribute(5, "data-ad-slot", "1543344085");
                 b.CloseElement();
