@@ -1,28 +1,25 @@
 
-<div style="margin-left: 8px;margin-right: 8px;border-radius: var(--mud-default-borderradius);">
-    @Ads
+<div @key="_id" style="margin-left: 8px;margin-right: 8px;border-radius: var(--mud-default-borderradius);">
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-format="fluid"
+         data-ad-layout-key="-hd+c+5l+e-5q"
+         data-ad-client="ca-pub-9521363170451553"
+         data-ad-slot="1543344085">
+</ins>
+
 </div>
 
 @code {
-    private RenderFragment Ads
+    private string _id = Guid.NewGuid().ToString();
+
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        get
+        if (firstRender)
         {
-            RenderFragment form = b =>
-            {
-                b.OpenElement(0, "ins");
-                b.AddAttribute(0, "class", "adsbygoogle");
-                b.AddAttribute(1, "style", "display:block");
-                b.AddAttribute(2, "data-ad-format", "fluid");
-                b.AddAttribute(3, "data-ad-layout-key", "-hd+c+5l+e-5q");
-                b.AddAttribute(4, "data-ad-client", "ca-pub-9521363170451553");
-                b.AddAttribute(5, "data-ad-slot", "1543344085");
-                b.CloseElement();
-                b.OpenElement(0, "script");
-                b.AddContent(0, "(adsbygoogle = window.adsbygoogle || []).push({});");
-                b.CloseElement();
-            };
-            return form;
+            await JS.InvokeVoidAsync("eval", "(adsbygoogle = window.adsbygoogle || []).push({});");
         }
     }
 }
