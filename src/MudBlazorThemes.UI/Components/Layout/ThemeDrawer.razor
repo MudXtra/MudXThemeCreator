@@ -8,7 +8,7 @@
 @inject INotifierService NotificerService
 
 <MudDrawer @bind-Open="IsDrawerOpen" ClipMode="DrawerClipMode.Docked" Width="300px"
-Elevation="2" Variant="DrawerVariant.Persistent">
+           Elevation="2" Variant="DrawerVariant.Persistent">
     <div class="ml-2 mt-2 mb-2" style="text-align: center;">
         @if (_selectKey == 0)
         {
@@ -44,20 +44,19 @@ Elevation="2" Variant="DrawerVariant.Persistent">
         }
         <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
             <MudButton OnClick="@(() => ToggleDark())" Class="mt-2"
-            StartIcon="@(!IsDarkMode ? Icons.Material.Outlined.WbSunny : Icons.Material.Outlined.NightsStay)">
+                       StartIcon="@(!IsDarkMode ? Icons.Material.Outlined.WbSunny : Icons.Material.Outlined.NightsStay)">
                 @(!IsDarkMode ? "Light Mode" : "Dark Mode")
             </MudButton>
             <MudTooltip Text="Reset All Theme Values">
                 <MudButton Class="mt-2" StartIcon="@Icons.Material.Outlined.Refresh" OnClick="@ResetTheme" />
             </MudTooltip>
         </MudStack> <!--  -->
-        <MudTextField T="string" Value="@_searchString" ValueChanged="@SearchAllPanels" 
-        Placeholder="Search by name" Variant="Variant.Outlined" Class="mx-2 my-2"
-        Typo="Typo.caption" Margin="Margin.Dense" Clearable DebounceInterval="250" />
-        @* <AdComponent /> *@
+        <MudTextField T="string" Value="@_searchString" ValueChanged="@SearchAllPanels"
+                      Placeholder="Search by name" Variant="Variant.Outlined" Class="mx-2 my-2"
+                      Typo="Typo.caption" Margin="Margin.Dense" Clearable DebounceInterval="250" />
         <!-- div to take up remaining vh and allow scrolling -->
         <div style="overflow-y: auto; height: 80vh;">
-            <ThemePanels @ref="_themePanelComponent" @key="@_keyId" SearchString="@_searchString"/>
+            <ThemePanels @ref="_themePanelComponent" @key="@_keyId" SearchString="@_searchString" />
         </div>
     </div>
 </MudDrawer>
@@ -101,7 +100,7 @@ Elevation="2" Variant="DrawerVariant.Persistent">
         if (firstRender)
         {
             ThemeChanged();
-        }            
+        }
     }
 
     public async Task ToggleDark()
@@ -136,7 +135,7 @@ Elevation="2" Variant="DrawerVariant.Persistent">
             await ThemeState.ResetTheme();
             await LoadTheme(_themeId);
             ThemeChanged();
-            _keyId++;            
+            _keyId++;
             NavManager.NavigateTo("/");
             StateHasChanged();
         }
@@ -185,7 +184,7 @@ Elevation="2" Variant="DrawerVariant.Persistent">
         _selectKey = 0;
         StateHasChanged();
         _customThemes = ThemeState.CustomThemes;
-        _themeId = ThemeState.ThemeId;        
+        _themeId = ThemeState.ThemeId;
         _selectKey++;
         StateHasChanged();
     }
