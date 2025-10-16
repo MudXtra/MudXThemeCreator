@@ -1,0 +1,166 @@
+@page "/about"
+
+<PageTitle>About MudBlazor Theme Manager Creator / Known Issues</PageTitle>
+<HeadContent>
+    <meta name="description" content="Shows all known issues, updates, about, credits to creators, and instructions for use for MudBlazor Theme Creator." />
+    <meta property="og:description" content="Shows all known issues, updates, about, credits to creators, and instructions for use for MudBlazor Theme Creator." />
+</HeadContent>
+<MudText Typo="Typo.h3">About / Known Issues</MudText>
+
+<MudGrid Class="mt-4">
+    <MudItem xs="12">
+        <MudPaper Class="pa-4" Elevation="2">
+            <MudText Typo="Typo.h6" Class="mb-4">Known Issues</MudText>
+            <MudText>
+                <ol class="px-6 py-1">
+
+                    <li>Please report any issues to the GitHub repository (link below)</li>
+                </ol>
+            </MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12">
+        <MudPaper Class="pa-4" Elevation="2">
+            <MudText Typo="Typo.h6" Class="mb-4">Changelog</MudText>
+            <MudText>
+                @{
+                    List<ChangeLogItem> changeLogItems =
+                                [
+                    new ChangeLogItem(ChangeWhen: DateTime.Parse("2024-10-9"), ChangeWho: "Jilael",
+                ChangeWhat: "Initial Release", ChangeWhy: "Initial Release" ),
+                new ChangeLogItem(ChangeWhen: DateTime.Parse("2024-10-11"), ChangeWho: "Jilael",
+                ChangeWhat: "Added MudExtensions for MudExDialog component and updated all dependencies", ChangeWhy: "Feature Request" ),
+                new ChangeLogItem(ChangeWhen: DateTime.Parse("2024-10-11"), ChangeWho: "Jilael",
+                ChangeWhat: "Updated Color Picker component to MudExDialog making it draggable. Added palette icon options in place of button to copy from existing Primary, Secondary, or Tertiary colors.", ChangeWhy: "Feature Request" ),
+                new ChangeLogItem(ChangeWhen: DateTime.Parse("2024-10-11"), ChangeWho: "Jilael",
+                ChangeWhat: "Fixed timing issue in Snackbarchip, specifically in async operations where the chip is supposed to show after some operation is done.", ChangeWhy: "Bug Fix, SnackbarChip" ),
+                new ChangeLogItem(ChangeWhen: DateTime.Parse("2024-10-12"), ChangeWho: "Jilael",
+                ChangeWhat: "Realigned header actions buttons on Color Picker component", ChangeWhy: "Enhancement" ),
+                new ChangeLogItem(ChangeWhen: DateTime.Parse("2024-10-12"), ChangeWho: "Jilael",
+                ChangeWhat: "Fixed Opacity values not going back and forth, copyfrom palettes from reverting to changed colors", ChangeWhy: "Bug Fixes" ),
+                new ChangeLogItem(ChangeWhen: DateTime.Parse("2024-10-12"), ChangeWho: "Jilael",
+                ChangeWhat: "Fixed Number Picker Step values to be in line with T (value type) and prevent stale data", ChangeWhy: "Bug Fix" ),
+                new ChangeLogItem(ChangeWhen: DateTime.Parse("2024-10-13"), ChangeWho: "Jilael",
+                ChangeWhat: "Adjusted invalid spacing in Title Area, updated Dependencies, and added an Icon", ChangeWhy: "Invalid Look" ),
+                new ChangeLogItem(ChangeWhen: DateTime.Parse("2024-11-29"), ChangeWho: "Jilael",
+                ChangeWhat: "Upgraded Mud version to 7.1.5, added tooltips and proper width to all panel buttons, added Tooltip Extensions, upgraded other dependencies, added support to V8.x.x in MudBlazor export function", ChangeWhy: "V8 support" ),
+                new ChangeLogItem(ChangeWhen: DateTime.Parse("2025-02-27"), ChangeWho: "Jilael", ChangeWhy: "Open github issues",
+                ChangeWhat: "Upgrade dependencies to latest versions, rewrite backbone, add authorization, move to static database, fix few bugs. Switch codeview to MudEx controls."),
+                new ChangeLogItem(ChangeWhen: DateTime.Parse("2025-03-06"), ChangeWho: "Jilael", ChangeWhy: "ReModel Application",
+                ChangeWhat: "Remove ability to maintain state changes between sessions, instead opting for an account login system. Create wizard for theme upload. Reimport and adjust all themes."),
+                new ChangeLogItem(ChangeWhen: DateTime.Parse("2025-04-20"), ChangeWho: "Jilael", ChangeWhy: "Bug Review",
+                ChangeWhat: "Fix order by display to order by personal themes yes/no, then order by theme name. Also disabled saves until bug fixes are done."),
+                new ChangeLogItem(ChangeWhen: DateTime.Parse("2025-07-07"), ChangeWho: "Jilael", ChangeWhy: "Dependencies, Adsense",
+                ChangeWhat: "Update dependencies to latest version and switch to mudx.org."),
+                new ChangeLogItem(ChangeWhen: DateTime.Parse("2025-10-09"), ChangeWho: "Jilael", ChangeWhy: "Separation of Principals",
+                ChangeWhat: "Define 3 services to handle everything, UserPreferences/ThemeState/ThemeCreator and significantly reduce memory footprint."),
+                new ChangeLogItem(ChangeWhen: DateTime.Parse("2025-10-09"), ChangeWho: "Jilael", ChangeWhy: "Database Changes",
+                ChangeWhat: "Create a backup DB if an external user wants to run the program."),
+                new ChangeLogItem(ChangeWhen: DateTime.Parse("2025-10-09"), ChangeWho: "Jilael", ChangeWhy: "Link Light/Dark Modes",
+                ChangeWhat: "Allow a user to see/change both Light and Dark modes regardless if the page is currently Light/Dark Mode.")
+                    ];
+                }
+                <ul class="px-6 py-1">
+                    @foreach (var item in changeLogItems)
+                    {
+                        <li><b>@item.ChangeWho</b>, @item.ChangeWhen.ToString("yyyy-MM-dd"),
+                            Why: @item.ChangeWhy<br/>
+                            &nbsp;&nbsp;&nbsp;&nbsp;@item.ChangeWhat
+                        </li>
+                    }
+                </ul>
+            </MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12">
+        <MudPaper Class="pa-4" Elevation="2">
+            <MudText Typo="Typo.h6" Class="mb-4">
+                About -
+                <MudLink Href="https://github.com/MudXtra/MudXThemeCreator" Target="_blank" rel="noopener">
+                    <MudImage Class="github-image" Src="github-512.webp" Alt="GitHub Logo Icon" />
+                    Theme Creator GitHub Repository
+                </MudLink>
+            </MudText>
+            <MudText>
+                Created by <MudLink Href="https://github.com/versile2" Target="_blank" rel="noopener">Versile</MudLink> using MudBlazor and .NET. This
+                code and all work contained within is available as Open Source and whatever license is attached to the
+                MudBlazor project. This project is not affiliated with MudBlazor or any of the contributors to the project.
+                We are not responsible for any issues that may arise from using this tool.<br/>
+                <b>MudBlazor</b> - <MudLink Href="https://www.mudblazor.com" Target='_blank' rel="noopener">https://www.mudblazor.com</MudLink><br />
+                <b>MudEx</b> - <MudLink Href='https://www.mudex.org' Target='_blank' rel="noopener">https://www.mudex.org</MudLink>
+                <b>MudX</b> - <MudLink Href="https://www.mudx.org" Target="_blank" rel="noopener">https://www.mudx.org</MudLink>
+            </MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12">
+        <MudPaper Class="pa-4" Elevation="2">
+            <MudText Typo="Typo.h6" Class="mb-4">Instructions For Use</MudText>
+            <MudText>
+                This isn't meant to be step by step instructions for use. The average user of this site should
+                already be a developer and have some general understanding of the process. However, the more
+                complicated things are explained as you do them, such as Exporting.
+                <ol class="px-6 py-1">
+                    <li>The "AVAILABLE THEMES" MudSelect in the MudDrawer has 3 sets of options</li>
+                    <ol class="px-6 py-1">
+                        <li>
+                            <b>Last Modified Theme</b> - This is where most of the magic is actually happening. Any time a
+                            change of any kind is made it saves that change to browser state. Those changes are always
+                            contained in Last Modified Theme. Even when you are on another theme (other than Default)
+                            it is saving everything to this state. That ensures if you get interupted as long as you
+                            use the same browser you don't lose any work.
+                        </li>
+                        <li>
+                            <b>The Default Theme</b> - These are loading on session start and are the defaults for MudBlazor.
+                            These defaults are stored in the application not pulled from MudBlazor so if the team changes
+                            something about a theme it might be out of date. I don't expect those changes but it's possible.
+                        </li>
+                        <li>
+                            <b>Custom Themes</b> - These are themes the site controller has imported. Generally through the import
+                            tool built into the site. Currently the tool imports Bootstrap themes and all of the open source
+                            Bootswatch themes were imported to start. These aren't 1 for 1 imports, but should be generally
+                            close.
+                        </li>
+                    </ol>
+                    <li>
+                        The home screen is nothing but a display canvas, it has most of the known components of the
+                        MudBlazor library in different configurations trying to demonstrate what your theme changes
+                        might do to a particular component.
+                    </li>
+                    <li>
+                        In the upper right are options to choose that will navigate you away from the Home screen.
+                        <ol class="px-6 py-1">
+                            <li>
+                                CSS is if you need to look up a variable. If it's
+                                a MudBlazor variable it will return the result. If it returns no result it's not a MudBlazor
+                                variable.
+                            </li>
+                            <li>
+                                Cloud Upload is where you can import a Bootstrap theme. It will attempt to read any valid
+                                Bootstrap theme and load it into the application. Loading a Theme this way loads into the Last
+                                Modified Theme area and will remain until you select a new theme. There is no option to "Save" as only
+                                a Moderator can do that, but you can modify, work with, and eventually export it.
+                            </li>
+                            <li>
+                                Export Theme is where this utility really shines. It allows you to export either in a C#
+                                theme file or CSS files all of the options you selected. Note it includes ALL options even
+                                those you did not change. This is just in case you missed something or something changes
+                                down the line in the default. Lastly, if you make <i>any</i> change to anything while on
+                                this page you need to click the "Refresh" button to regenerate the theme.
+                            </li>
+                            <li>
+                                Next there is the About page, this page to describe known issues, workarounds, and
+                                instructions.
+                            </li>
+                            <li>
+                                The Light/Dark button is a toggle for the site. It will change the site to a light or dark
+                                theme. Please note there is no way to display both at the same time so if you make a change
+                                in the Light theme, a similar inverse change should be made in Dark theme if you plan to use
+                                both.
+                            </li>
+                        </ol>
+                    </li>
+                </ol>
+            </MudText>
+        </MudPaper>
+    </MudItem>
+</MudGrid>

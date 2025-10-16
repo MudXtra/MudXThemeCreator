@@ -1,0 +1,175 @@
+﻿@inherits ComponentBase
+
+@if (_themeState.IsLoading)
+{
+    <MudOverlay Visible="true" LightBackground="true" AutoClose="false" Absolute="true">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+    </MudOverlay>
+}
+else
+{
+    var defaultThemeSelections = _themeState.DefaultThemes
+        .Where(x => (x.ThemeType.Contains("MudColor")
+                     || x.ThemeType.Contains("String"))
+                    && x.ThemeName.Contains(_userPreference.SearchTerm, StringComparison.OrdinalIgnoreCase));
+    var lightName = _themeCreator.DefaultThemePalettes.FirstOrDefault(x => x.Id == 1);
+    var darkName = _themeCreator.DefaultThemePalettes.FirstOrDefault(x => x.Id == 2);
+    <MudExpansionPanels Elevation="3" MultiExpansion Gutters="false">
+        <!-- Light Mode -->
+        <MudExpansionPanel Class="ma-0 pa-0" Gutters="false" @bind-Expanded="@_panelDictionary["light"]"
+                           Text="@lightName?.Name">
+            <div class="color-container">
+                @foreach (var themeSelection in defaultThemeSelections)
+                {
+                    <div class="tooltip-fit mud-width-full" data-tooltip="@themeSelection.CssVariable">
+                        <ThemeCreatorColorItem @key="@themeSelection.Id" Name="@themeSelection.ThemeName"
+                                                ColorChanged="@(async (MudColor newCol) => await ThemeColorChanged(themeSelection.Id, newCol, 1))"
+                                                RevertColor="@(_themeState.DefaultThemes.FirstOrDefault(x => x.Id == themeSelection.Id)?.LightValueHex)"
+                                                DefaultColor="@(_themeState.GetThemeData<ThemeSelection>(themeSelection.Id).LightValueHex)" />                            
+                    </div>
+                }
+            </div>
+        </MudExpansionPanel>
+        <!-- Dark Mode -->
+        @{
+            var themeSelections = _themeState.DefaultThemes
+                .Where(x => (x.ThemeType.Contains("MudColor") || x.ThemeType.Contains("String"))
+                && x.ThemeName.Contains(_userPreference.SearchTerm, StringComparison.OrdinalIgnoreCase));
+        }
+        <MudExpansionPanel Class="ma-0 pa-0" Gutters="false" @bind-Expanded="@_panelDictionary["dark"]"
+                           Text="@darkName?.Name">
+            <div class="pa-1 ma-0" style="max-height: 45vh; overflow-y: auto; overflow-x: hidden">
+                @foreach (var themeSelection in themeSelections)
+                {
+                    <div class="mb-1 tooltip-fit mud-width-full" data-tooltip="@themeSelection.CssVariable">
+                        <ThemeCreatorColorItem @key="@themeSelection.Id" Name="@themeSelection.ThemeName"
+                                               ColorChanged="@(async (MudColor newCol) => await ThemeColorChanged(themeSelection.Id, newCol, 2))"
+                                               RevertColor="@(_themeState.DefaultThemes.FirstOrDefault(x => x.Id == themeSelection.Id)?.DarkValueHex)"
+                                               DefaultColor="@(_themeState.GetThemeData<ThemeSelection>(themeSelection.Id).DarkValueHex)" />
+                    </div>
+                }
+            </div>
+        </MudExpansionPanel>
+        <!-- Shadows isn't something that gets customized often, hiding it for now -->
+        @*                                     <div @onkeydown:preventDefault="true">
+                <MudStack Class="pr-6 shadow-selector" Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween"
+                            tabindex="0" @onkeydown="HandleShadowKeyPress">
+                    <MudText>@customShadows[currentShadowIndex].ToString()</MudText>
+                    <MudStack Spacing="0" AlignItems="AlignItems.Center" Class="icon-buttons-stack">
+                        <MudIconButton OnClick="@(() => ChangeShadowIndex(-1))"
+                                        Disabled="@(currentShadowIndex == 0)"
+                                        Icon="@Icons.Material.Filled.KeyboardArrowUp" Size="Size.Small" />
+                        <MudIconButton OnClick="@(() => ChangeShadowIndex(1))"
+                                        Disabled="@(currentShadowIndex == customShadows.Count - 1)"
+                                        Icon="@Icons.Material.Filled.KeyboardArrowDown" Size="Size.Small" />
+                    </MudStack>
+                </MudStack>
+            </div>
+            <MudTextField @bind-Value="@customShadows[currentShadowIndex].Default" Label="Shadow Value" /> *@
+
+        @*  new ThemeOption{ Id = 1, Name = "Shadows" },
+                new ThemeOption{ Id = 2, Name = "Layout Properties" },
+                new ThemeOption{ Id = 3, Name = "Typography" },
+                new ThemeOption{ Id = 4, Name = "ZIndex" }              *@
+
+        <!-- Layout Properties, 1st part is leftover palettes that use double for some reason -->
+        @{
+            var leftoverPaletteProperties = _themeState.DefaultThemes.Where(x => x.ThemeType.Contains("Double")
+                && x.ThemeName.Contains(_userPreference.SearchTerm, StringComparison.OrdinalIgnoreCase));
+            var layoutProperties = _themeState.DefaultLayouts
+                .Where(x => x.Name.Contains(_userPreference.SearchTerm, StringComparison.OrdinalIgnoreCase));
+            var layoutName = _themeCreator.DefaultThemeOptions.FirstOrDefault(x => x.Id == 2);
+        }
+        <MudExpansionPanel Class="ma-0 pa-0" Gutters="false" Text="@layoutName?.Name" @bind-Expanded="@_panelDictionary["o2"]">
+            @foreach (var themeSelect in leftoverPaletteProperties)
+            {
+                <div class="tooltip-fit" style="width: 85%;" data-tooltip="@themeSelect.CssVariable">
+                    <MudSlider Step=".05" Min="0.1" Max="0.9" T="double" TickMarks
+                               Value="@(double.TryParse(_themeState.GetThemeData<ThemeSelection>(themeSelect.Id).LightValue, out double result) ? result : 0.0)"
+                               ValueChanged="@(val => OnThemeLayoutDoubleChanged(val, themeSelect.Id))"
+                               Class="mt-3">
+                        <MudText Typo="Typo.body2">
+                            @themeSelect.ThemeName: <b>@($"{_themeState.GetThemeData<ThemeSelection>(themeSelect.Id).LightValue}")</b>
+                        </MudText>
+                    </MudSlider>
+                </div>
+            }
+            @foreach (var layoutProp in layoutProperties)
+            {
+                <div class="tooltip-fit" style="width: 85%;" data-tooltip="@layoutProp.CssVariable">
+                    <ThemeCreatorLayoutItem LayoutProp="@(_themeState.GetThemeData<CustomLayoutProperty>(layoutProp.Id))"
+                                            LayoutPropChanged="@(async (int newSlider) => await LayoutPropertyChanged(layoutProp.Id, newSlider))" />
+                </div>
+            }
+        </MudExpansionPanel>
+
+        <!-- Typography -->
+        @{
+            var customTypos = _themeState.DefaultTypographies.Where(t => _typoList.Count > 0 &&
+                t.TypoType == _typoList[_typoValue] && t.DataType != "String[]").ToList();
+            var typosName = _themeCreator.DefaultThemeOptions.FirstOrDefault(x => x.Id == 3);
+        }
+        <MudExpansionPanel Class="ma-0 pa-0" Gutters="false" Text="@typosName?.Name" @bind-Expanded="@_panelDictionary["o3"]">
+            <div class="pa-0 ma-0" style="min-height: 10vh;max-height: 45vh;overflow-y: auto;overflow-x: hidden">
+                <div class="pa-1 ma-0">
+                    <ThemeCreatorSpinner T="string" SpinnerIndex="_typoValue" SpinnerIndexChanged="async (int newVal) => await SpinnerIndexChanged(newVal)" SpinnerList="@_typoList" />
+                    @foreach (CustomTypography typo in customTypos)
+                    {
+                        var typoIndex = typo.Id;
+                        <div class="tooltip-fit mud-width-full" data-tooltip="@typo.CssVariable">
+                            @switch (typo.DataType)
+                            {
+                                case "Int32":
+                                    <ThemeCreatorNumberItem T="int" Value="@(Convert.ToInt32(_themeState.GetThemeData<CustomTypography>(typo.Id).Default))"
+                                                            ValueChanged="@(async (int newVal) => await NumberItemChanged(typoIndex, newVal, "typo"))"
+                                                            Min="100" Max="1000" Step="50" Name="@typo.Name" />
+                                    break;
+                                case "Double":
+                                    <ThemeCreatorNumberItem T="double" Value="@(Convert.ToDouble(_themeState.GetThemeData<CustomTypography>(typo.Id).Default))"
+                                                            ValueChanged="@(async (double newVal) => await NumberItemChanged(typoIndex, newVal, "typo"))"
+                                                            Min="0" Max="2" Step=".1" Name="@typo.Name" />
+                                    break;
+                                case "String":
+                                    <ThemeCreatorTextItem Name="@typo.Name" Text="@(_themeState.GetThemeData<CustomTypography>(typo.Id).Default)"
+                                                          TextChanged="@(async (string newVal) => await TextItemChanged(typoIndex, newVal, "typo"))" />
+                                    break;
+                                case "String[]":
+                                    <MudText Typo="Typo.body2" Class="palette-text">@typo.Name</MudText>
+                                    var stringArray = _themeState.GetThemeData<CustomTypography>(typo.Id).Default.Split(' ').ToArray();
+                                    <MudSelect T="string" SelectedValues="@stringArray" MultiSelection="true" Placeholder="Select font(s)"
+                                               Style="min-width: 200px;">
+                                        @foreach (string f in GetAvailableFonts())
+                                        {
+                                            <MudSelectItem T="string" Value="@f">@f</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                    break;
+                                default:
+                                    <MudText Typo="Typo.body2" Class="palette-text">@typo.Name</MudText>
+                                    <MudText Typo="Typo.body2" Class="palette-text"><b>Unsupported DataType</b>: @typo.DataType</MudText>
+                                    break;
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </MudExpansionPanel>
+
+        <!-- ZIndex -->
+        @{
+            var zIndexes = _themeState.DefaultZIndexes
+                .Where(x => x.Name.Contains(_userPreference.SearchTerm, StringComparison.OrdinalIgnoreCase));
+            var zIndexName = _themeCreator.DefaultThemeOptions.FirstOrDefault(x => x.Id == 4);
+        }
+        <MudExpansionPanel Class="ma-0 pa-0" Gutters="false" Text="@zIndexName?.Name" @bind-Expanded="@_panelDictionary["o4"]">
+            @foreach (var zIndex in zIndexes)
+            {
+                <div class="tooltip-large mud-width-full" data-tooltip="@zIndex.CssVariable">
+                    <ThemeCreatorNumberItem T="int" Value="@(Convert.ToInt32(_themeState.GetThemeData<CustomZIndex>(zIndex.Id).Default))"
+                                            ValueChanged="@(async (int newVal) => await NumberItemChanged(zIndex.Id, newVal, "zindex"))"
+                                            Min="1000" Max="2000" Step="50" Name="@zIndex.Name" />
+                </div>
+            }
+        </MudExpansionPanel>
+    </MudExpansionPanels>
+}

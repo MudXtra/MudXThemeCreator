@@ -1,0 +1,77 @@
+@page "/profile"
+@inject IThemeCreatorService _themeCreatorService
+@inject UserPreferencesService _userPreference
+@inject ISnackbar Snackbar
+
+<PageTitle>MudBlazor Theme Manager Account Profile Section</PageTitle>
+
+<MudText Typo="Typo.h3">User Profile</MudText>
+<br />
+<MudText Typo="Typo.body1">
+    Welcome<b>@($" {_userPreference.UserName}")</b>,<br />Theme Creator does not store any details of your user login information apart from email address to use as a unique Id.
+    See below for a list of themes tied to your account. Themes that are set to approved cannot be deactivated without creating a GitHub issue. Each account can maintain 5
+    active unapproved themes at any given time. If you wish to increase this limit just <MudLink Href="https://buymeacoffee.com/versile2">buy me a coffee</MudLink> and I will
+    increase your limit to 50. Your current limit: <b>@_count</b> of <b>@_maxLimit</b>
+</MudText>
+<br />
+
+<MudDataGrid T="CustomTheme" Items="customThemes" Striped Bordered Dense RowsPerPage="10">
+    <ColGroup>
+        <col style="width: 250px;" />
+        <col style="width: 450px;" />
+        <col style="width: 50px;" />
+        <col style="width: 50px; "/>
+        <col />
+    </ColGroup>
+    <Columns>
+        <PropertyColumn Property="x => x.Name" Title="Name" />
+        <PropertyColumn Property="x => x.OtherText" Title="Description" />
+        <PropertyColumn Property="x => x.IsApproved" Title="Approved" />              
+        <PropertyColumn Property="x => x.IsActive" Title="Active" />
+        <PropertyColumn Property="x => x.UploadedBy" Title="Uploaded By" />
+        <TemplateColumn>
+            <CellTemplate>
+                <MudButton Color="Color.Error" OnClick="@(() => DeactivateTheme(context.Item.Id))">Deactivate</MudButton>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+</MudDataGrid>
+
+@code {
+    private int _count;
+    private int _maxLimit;
+    private List<CustomTheme> customThemes = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        _userPreference.PropertyChanged += async (s, o) => await UpdatePage();
+        await UpdatePage();
+    }
+
+    private async Task DeactivateTheme(int themeId)
+    {
+        var result = await _themeCreatorService.DeleteTheme(themeId);
+        if (result)
+        {
+            Snackbar.Add("Theme Deactivated", Severity.Success);
+            await UpdatePage();
+            return;
+        }
+        Snackbar.Add("Failed to Deactivate Theme", Severity.Error);
+    }
+
+    private async Task UpdatePage()
+    {
+        customThemes = await _themeCreatorService.GetCustomThemesAsync();
+        customThemes = customThemes.Where(c => c.UploadedBy == _userPreference.UserName.Trim() || _userPreference.SuperUser).ToList();
+        _count = customThemes.Where(x => !x.IsApproved).Count();
+        _maxLimit = _themeCreatorService.MaxThemes(_userPreference.UserName.Trim());
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        _userPreference.PropertyChanged -= async (s, o) => await UpdatePage();
+    }
+}

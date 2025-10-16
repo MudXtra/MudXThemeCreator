@@ -1,0 +1,31 @@
+﻿@page "/Error"
+@using System.Diagnostics
+@inject ILogger<Error> _logger
+
+<PageTitle>Error</PageTitle>
+
+<MudText Typo="Typo.h4">An error occurred while processing your request.</MudText>
+<br/>
+<MudText Typo="Typo.h4">Logging</MudText>
+<MudText Typo="Typo.body1">
+    The issue has been logged and can be viewed by support. Please try your request again, or open a GitHub Issue.
+</MudText>
+
+<MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="@(_ => Recover?.Invoke())">Continue</MudButton>
+
+@code{
+    [Parameter]
+    public Exception Exception { get; set; } = default!;
+
+    [Parameter]
+    public Action? Recover { get; set; } = default!;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _logger.LogError($"An unhandled exception occurred (MudXThemeCreator).\n{Exception}");
+            StateHasChanged();
+        }
+    }
+}

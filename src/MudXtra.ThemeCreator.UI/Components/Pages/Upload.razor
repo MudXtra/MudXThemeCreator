@@ -1,0 +1,399 @@
+@page "/upload"
+@using System.Security.Cryptography
+@using System.Text
+@using System.Diagnostics
+@inject ISnackbar Snackbar
+@inject IThemeCreatorService _themeCreatorService
+@inject ThemeStateService _themeState
+@inject UserPreferencesService _userPreference
+@inject IJSRuntime JsRuntime
+
+<PageTitle>MudBlazor Theme Manager Creator Upload Section</PageTitle>
+<HeadContent>
+    <meta name="description" content="Where a dev can upload a Bootswatch or MudBlazor theme into MudBlazor Theme Creator." />
+    <meta property="og:description" content="Where a dev can upload a Bootswatch or MudBlazor theme into MudBlazor Theme Creator." />
+</HeadContent>
+<MudText Typo="Typo.h3">Upload Section</MudText>
+<br />
+<MudText Typo="Typo.body1">
+    Welcome<b>@($"{_userPreference.UserName}")</b>,<br />
+    Please upload or paste a Bootswatch CSS file or a MudBlazor CS theme file no larger than 1MB here to create a potential new theme or save a theme to your account.
+</MudText>
+<AuthorizeView>
+    <Authorized>
+        <MudContainer MaxWidth="MaxWidth.Large">
+            <MudStepper @bind-ActiveIndex="_stepperIndex" Class="mx-auto mt-4" NonLinear CenterLabels>
+                <ConnectorTemplate Context="stepContext">
+                    <MudProgressLinear Indeterminate Striped Color="Color.Info" Style="height: 2px;" />
+                </ConnectorTemplate>
+                <ChildContent>
+                    <MudStep Title="Theme Input">
+                        <MudFileUpload T="IBrowserFile" FilesChanged="UploadFile" Required Accept="@string.Join(",", AllowedExtensions)">
+                            <ActivatorContent>
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.CloudUpload">Upload CSS or CS File</MudButton>
+                            </ActivatorContent>
+                        </MudFileUpload>
+                        <MudText Class="mt-4">
+                            Bootswatch uploading is not perfect, Very little typography and layout property information is gathered and Zindex is complete ignored. <br />
+                            Not all themes are compatible, the uploader accepts version 7.xx MudBlazor Themes and 8.xx MudBlazor Themes. It will only pick up the first theme in a multi theme file.
+                        </MudText>                        
+                        <MudField Class="mt-2"
+                        Variant="Variant.Outlined" Label="Paste CSS or CS File">
+                            <div @ref="_editableDiv"
+                            contenteditable="true"
+                            @oninput="@(e => UpdatePastedFileValue(e))"
+                            class="editable-div">
+                                @_pastedFile
+                            </div>
+                        </MudField>
+                        <MudStack Row="true" Justify="Justify.FlexEnd">
+                            <MudButton Color="Color.Primary" Disabled="@(_pastedFile.Length < 50)" OnClick="@(async () => await ProcessFile(_pastedFile))">
+                                Upload Pasted Content
+                            </MudButton>
+                        </MudStack>                        
+                    </MudStep>
+                    <MudStep Title="Save Theme">
+                        <MudForm @ref="_saveForm" @bind-IsValid="@_success">
+                            <MudCard>
+                                <MudCardHeader>
+                                    <CardHeaderContent>
+                                        <MudText Typo="Typo.h6">Save Theme</MudText>
+                                    </CardHeaderContent>
+                                    <CardHeaderActions>
+                                        @* <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Default" /> *@
+                                    </CardHeaderActions>
+                                </MudCardHeader>
+                                <MudCardContent Class="mt-n4">
+                                    <MudText>Save this theme to the database for later use.</MudText>
+                                    <MudText class="mb-4" Typo="Typo.body2" HtmlTag="p">
+                                        By default saved themes are only available to the account they are saved to. At site owner discression
+                                        it may be activated for public use. You can create an issue on GitHub if you would like this to happen sooner.
+                                        If the current theme has not been modified it cannot be saved. An account can hold a maximum of 5 private themes.
+                                    </MudText>
+                                    <MudText>
+                                        Theme ID: <b>
+                                            @_themeId@if (_themeState.IsModified)
+                                            {
+                                                <sup style="color: red; font-weight: bolder;" data-tooltip="Modified">*&nbsp;</sup>
+                                            }
+                                        </b>
+                                    </MudText>
+                                    <MudTextField Label="Theme Name"
+                                                  @bind-Value=_themeState.ThemeName
+                                                  Required
+                                                  Validation="@(new Func<string, IEnumerable<string>>(MaxLengthNameValidation))"
+                                                  HelperText="5-30 Characters" />
+                                    <MudTextField AutoGrow
+                                                  Class="mb-2"
+                                                  Label="Theme Description"
+                                                  HelperText="5-175 Characters"
+                                                  @bind-Value="_themeState.ThemeOtherText"
+                                                  Required
+                                                  Validation="@(new Func<string, IEnumerable<string>>(MaxLengthOtherValidation))" />
+                                </MudCardContent>
+                                <MudCardActions Class="d-flex flex-row justify-end">
+                                    <MudTooltip Text="Saving a theme will create a new theme for your account unless you are the owner. You can only have 5 themes per account.">
+                                        <MudButton Variant="Variant.Text" Color="Color.Primary" Disabled="@(!_userPreference.SuperUser)" OnClick="SaveTheme">
+                                            @(SaveUpdateTheme ? "Create New Theme" : "Update Existing Theme")
+                                        </MudButton> <!-- Disabled="@(!_success || !themeState.IsModified)" -->
+                                        <sup class="ml-n2" style="color: red; font-weight: bolder;">*&nbsp;</sup>
+                                    </MudTooltip>
+                                </MudCardActions>
+                            </MudCard>
+                        </MudForm>
+                    </MudStep>
+                    <MudStep Title="Approve Theme">
+                        <AuthorizeView Roles="SuperUser">
+                            <Authorized Context="superContext">
+                                <MudStack Class="justify-center" Row AlignItems="AlignItems.Center">
+                                    <MudSwitch Label="Approved" Value="@_approved" ValueChanged="@((bool val) => ApproveChanged(val))" Color="Color.Primary" />
+                                    <MudIconButton Color="Color.Primary" Icon="@Icons.Material.Filled.Save" Disabled="@(_disabledApprove || !_success)" OnClick="ApproveTheme" />
+                                </MudStack>
+                            </Authorized>
+                            <NotAuthorized Context="superNotContext">
+                                <MudAlert Severity="Severity.Info">
+                                    Approved themes are for public consumption and no longer count against your 5 theme maximum.
+                                    If you wish your theme to be approved please open a
+                                    <MudLink Href="https://github.com/MudXtra/MudXThemeCreator" Target="_blank" rel="noopener">Github Issue</MudLink>
+                                    including the theme Id.
+                                </MudAlert>
+                            </NotAuthorized>
+                        </AuthorizeView>
+                    </MudStep>
+                </ChildContent>
+                <ActionContent Context="actionContext" />
+            </MudStepper>
+        </MudContainer>
+    </Authorized>
+    <NotAuthorized>
+        <MudAlert Severity="Severity.Warning">You cannot upload or save a theme unless logged in. You will have to start over if you log in to save.</MudAlert>
+        Login Here: <LoginDisplay />
+    </NotAuthorized>
+</AuthorizeView>
+@if (!_userPreference.NoAds)
+{
+    <ExportAd />
+}
+
+@code {
+    readonly string[] AllowedExtensions = { ".css",".cs" };
+    const long MaxFileSize = 1024 * 1024; // 1MB in bytes
+    private bool _approved;
+    private bool _disabledApprove = true;
+    private bool _success;
+    private int _themeId;
+    private MudForm? _saveForm;
+    private string _pastedFile = string.Empty;
+    private ElementReference _editableDiv;
+    private int _stepperIndex = 0;
+
+    /// <summary>
+    /// Whether this is an insertion or update of a theme.
+    /// </summary>
+    private bool SaveUpdateTheme => _themeId == 0 ||                            // New Theme
+                                    (_approved && !_userPreference.SuperUser) ||                // Theme not public and user is not a Super User
+                                    (_themeState.UserName != _userPreference.UserName.Trim()     // Theme doesn't belong to user nor are they SuperUser
+                                     && !_userPreference.SuperUser);
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        _userPreference.PropertyChanged += (s, e) => InvokeAsync(StateHasChanged);
+        _themeState.PropertyChanged += (s ,e) => ModifiedChanged();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+        if (firstRender)
+        {
+            UpdateTheme();            
+        }
+        if (_themeId != _themeState.ThemeId)
+        {
+            UpdateTheme();
+        }
+        _saveForm?.Validate();
+    }
+
+    private async Task UpdatePastedFileValue(ChangeEventArgs e)
+    {
+        _pastedFile = await JsRuntime.InvokeAsync<string>("getEditableContent", _editableDiv);
+    }
+
+    private async Task ApproveTheme()
+    {
+        var themeId = _themeId;
+        await _themeCreatorService.UpdateApprovedThemeAsync(themeId, _approved);
+        await _themeState.ClearStorage();
+        await _themeState.UpdateCustomThemes(null);
+        _userPreference.SelectedThemeIndex = themeId;
+        await _themeState.LoadTheme(themeId);
+        Snackbar.Add($"Theme {(_approved ? "Approved" : "UnApproved")} Successfully", Severity.Success);
+    }
+
+    private void UpdateTheme()
+    {
+        _themeId = _themeState.ThemeId;
+        _approved = _themeState.IsApproved;
+        StateHasChanged();
+    }
+
+    private void ApproveChanged(bool val)
+    {
+        _approved = val;
+        _disabledApprove = false;
+    }
+
+    private IEnumerable<string> MaxLengthNameValidation(string val)
+    {
+        if (string.IsNullOrWhiteSpace(val))
+        {
+            yield return "Name is required.";
+            yield break;
+        }
+        if (val.Length < 5)
+        {
+            yield return "Name must be at least 5 characters.";
+        }
+        if (val.Length > 30)
+        {
+            yield return "Name cannot be more than 30 characters.";
+        }
+    }
+
+    private IEnumerable<string> MaxLengthOtherValidation(string val)
+    {
+        if (string.IsNullOrWhiteSpace(val))
+        {
+            yield return "Other Text is required.";
+            yield break;
+        }
+        if (val.Length < 5)
+        {
+            yield return "Other Text must be at least 5 characters.";
+        }
+        if (val.Length > 199)
+        {
+            yield return "Other Text cannot be more than 175 characters.";
+        }
+    }
+
+    private async Task UploadFile(IBrowserFile file)
+    {
+        if (file == null)
+            return;
+
+        if (file.Size > MaxFileSize)
+        {
+            ShowNotification("File size exceeds the 1MB limit.", Severity.Warning);
+            return;
+        }
+
+        var fileExtension = Path.GetExtension(file.Name).ToLowerInvariant();
+        if (!AllowedExtensions.Contains(fileExtension))
+        {
+            ShowNotification("Only css or cs files (.css, .cs) are allowed.", Severity.Warning);
+            return;
+        }
+
+        if (fileExtension == ".css")
+        {
+            try
+            {
+                // Read the content of the file
+                var fileContent = await new StreamReader(file.OpenReadStream()).ReadToEndAsync();
+                if (fileContent.Length > 0)
+                {
+                    ShowNotification("File loaded successfully, processing...", Severity.Success);
+                    await ProcessFile(fileContent);
+                }
+                else
+                {
+                    ShowNotification($"Upload failed", Severity.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowNotification($"An error occurred: {ex.Message}", Severity.Error);
+            }
+        }
+        else if (fileExtension == ".cs")
+        {
+            try
+            {
+                // Read the content of the file
+                var fileContent = await new StreamReader(file.OpenReadStream()).ReadToEndAsync();
+                if (fileContent.Length > 0)
+                {
+                    ShowNotification("File loaded successfully, processing...", Severity.Success);
+                    await ProcessFile(fileContent);
+                }
+                else
+                {
+                    ShowNotification($"Upload failed", Severity.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowNotification($"An error occurred: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+
+    private async Task ProcessFile(string fileContent)
+    {
+        if (fileContent.Contains("MudTheme", StringComparison.InvariantCultureIgnoreCase))
+        {
+            var newthemeState = await _themeCreatorService.ImportMudBlazorTheme(fileContent);
+            if (newthemeState.CustomTheme != null)
+            {
+                await _themeState.LoadTheme(0);
+                await _themeState.UpdateThemeLists(newthemeState.ThemeSelections);
+                await _themeState.UpdateThemeLists(newthemeState.CustomShadows);
+                await _themeState.UpdateThemeLists(newthemeState.CustomLayoutProperties);
+                await _themeState.UpdateThemeLists(newthemeState.CustomTypographies);
+                await _themeState.UpdateThemeLists(newthemeState.CustomZIndices);
+                _themeState.ThemeName = newthemeState.CustomTheme.Name;
+                newthemeState.CustomTheme.Name = string.IsNullOrWhiteSpace(_themeState.ThemeName) ? "*Uploaded Theme" : _themeState.ThemeName;
+                _themeState.ThemeOtherText = newthemeState.CustomTheme.OtherText;
+                newthemeState.CustomTheme.OtherText = string.IsNullOrWhiteSpace(_themeState.ThemeOtherText) ? "*Uploaded Theme" : _themeState.ThemeOtherText;
+                newthemeState.CustomTheme.UploadedBy = _userPreference.UserName;
+                await _themeState.UpdateCustomThemes(newthemeState.CustomTheme);
+                _userPreference.SelectedThemeIndex = 0;                
+                _saveForm?.Validate();
+                ShowNotification($"{newthemeState.CustomTheme.Name} imported successfully, don't forget to save it!", Severity.Success);
+                _stepperIndex = 1;
+                _pastedFile = string.Empty;
+            }
+            else
+            {
+                ShowNotification("Theme import failed", Severity.Error);
+            }
+        }
+        else
+        {
+            var newthemeState = await _themeCreatorService.ImportBootswatchTheme(fileContent);
+            if (newthemeState.CustomTheme != null)
+            {
+                await _themeState.ClearStorage();
+                await _themeState.UpdateThemeLists(newthemeState.ThemeSelections);
+                await _themeState.UpdateThemeLists(newthemeState.CustomShadows);
+                await _themeState.UpdateThemeLists(newthemeState.CustomLayoutProperties);
+                await _themeState.UpdateThemeLists(newthemeState.CustomTypographies);
+                await _themeState.UpdateThemeLists(newthemeState.CustomZIndices);
+                _themeState.ThemeName = newthemeState.CustomTheme.Name;
+                newthemeState.CustomTheme.Name = string.IsNullOrWhiteSpace(_themeState.ThemeName) ? "*Uploaded Theme" : _themeState.ThemeName;
+                _themeState.ThemeOtherText = newthemeState.CustomTheme.OtherText;
+                newthemeState.CustomTheme.OtherText = string.IsNullOrWhiteSpace(_themeState.ThemeOtherText) ? "*Uploaded Theme" : _themeState.ThemeOtherText;
+                newthemeState.CustomTheme.UploadedBy = _userPreference.UserName;
+                _themeState.CustomThemes.Add(newthemeState.CustomTheme);
+                await _themeState.LoadTheme(0);
+                _saveForm?.Validate();
+                ShowNotification($"{newthemeState.CustomTheme.Name} imported successfully, don't forget to save it!", Severity.Success);
+                _stepperIndex = 1;
+                _pastedFile = string.Empty;
+            }
+            else
+            {
+                ShowNotification("Theme import failed", Severity.Error);
+            }
+        }
+    }
+
+    private async Task SaveTheme()
+    {
+        var result = await _themeCreatorService.SaveTheme(_themeState, _userPreference.UserName.Trim(), _userPreference.SuperUser);
+        if (result > 0)
+        {
+            await _themeState.ClearStorage();
+            await _themeState.UpdateCustomThemes(null);
+            _userPreference.SelectedThemeIndex = result;
+            await _themeState.LoadTheme(result);
+            Snackbar.Add("Theme Saved Successfully", Severity.Success);
+            _stepperIndex = 2;
+        }
+        else
+        {
+            Snackbar.Add("Theme Save Failed", Severity.Error);
+        }
+    }
+
+    private void ShowNotification(string message, Severity severity)
+    {
+        Snackbar.Add(message, severity);
+    }
+
+    private void ModifiedChanged()
+    {
+        _themeId = _themeState.ThemeId;
+        _approved = _themeState.IsApproved;
+        StateHasChanged();
+        _saveForm?.Validate();
+    }
+
+    private void Dispose()
+    {
+        _themeState.PropertyChanged -= (s,o) => ModifiedChanged();
+    }
+}

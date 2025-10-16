@@ -1,0 +1,67 @@
+﻿
+<div class="ma-2" style="text-align: center;">
+    <MudSelect @key="_selectKey"
+               Value="_userPreference.SelectedThemeIndex"
+               ValueChanged="@(async (int val) => {_userPreference.SelectedThemeIndex = val; await _themeState.LoadTheme(val); })"
+               Label="AVAILABLE THEMES" LockScroll>
+        <AuthorizeView Roles="SuperUser">
+            <Authorized>
+                @foreach (var customTheme in _themeState.CustomThemes.OrderBy(x => x.IsApproved).ThenBy(x => x.Name))
+                {
+                    <MudSelectItem @key="@customTheme.Id" Value="@customTheme.Id">
+                        <MudTooltip Arrow="true" Placement="Placement.Right" Text="@customTheme.OtherText">
+                            @DisplayThemeName(customTheme)
+                        </MudTooltip>
+                    </MudSelectItem>
+                }
+            </Authorized>
+            <NotAuthorized>
+                @foreach (var customTheme in _themeState.CustomThemes.OrderBy(x => x.IsApproved).ThenBy(x => x.Name).Where(x => x.IsApproved || x.UploadedBy == _themeState.UserName))
+                {
+                    <MudSelectItem @key="@customTheme.Id" Value="@customTheme.Id">
+                        <MudTooltip Arrow="true" Placement="Placement.Right" Text="@customTheme.OtherText">
+                            @DisplayThemeName(customTheme)
+                        </MudTooltip>
+                    </MudSelectItem>
+                }
+            </NotAuthorized>
+        </AuthorizeView>        
+    </MudSelect>
+
+    <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+        <MudButton OnClick="@(() => _userPreference.IsDarkMode = !_userPreference.IsDarkMode)" Class="mt-2"
+                   StartIcon="@(_userPreference.IsDarkMode 
+                                ? Icons.Material.Outlined.NightsStay
+                                : Icons.Material.Outlined.WbSunny)">
+            @(!_userPreference.IsDarkMode ? "Light Mode" : "Dark Mode")
+        </MudButton>
+        <MudTooltip Text="Reset All Theme Values">
+            <MudButton Class="mt-2" 
+                       StartIcon="@Icons.Material.Outlined.Refresh" 
+                       OnClick="@(() => ResetTheme())" />
+        </MudTooltip>
+    </MudStack>
+
+    <MudTextField T="string" Class="mx-2 my-2"
+                  @bind-Value="@_userPreference.SearchTerm"
+                  Placeholder="Search by name"
+                  Variant="Variant.Outlined"
+                  Typo="Typo.caption" Clearable 
+                  Margin="Margin.Dense" DebounceInterval="250" />
+        @* <AdComponent /> Unused while trying out Auto Ads (NO VIGNETTE) *@
+        <!-- div to take up remaining vh and allow scrolling -->
+        <div style="overflow-y: auto; height: 80vh;">
+            <ThemeDrawerPanel />
+        </div>
+</div>
+
+@code {
+    private string DisplayThemeName(CustomTheme customTheme)
+    {
+        var prefix = !customTheme.IsApproved ? "*" : "";
+        var modified = customTheme.Id == _userPreference.SelectedThemeIndex && _themeState.IsModified
+            ? "(Modified) "
+            : "";
+        return $"{prefix}{modified}{customTheme.Name}";
+    }
+}

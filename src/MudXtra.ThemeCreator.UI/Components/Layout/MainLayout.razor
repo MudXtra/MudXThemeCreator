@@ -1,0 +1,83 @@
+﻿@inherits LayoutComponentBase
+
+<MudThemeProvider @bind-IsDarkMode="_userPreference.IsDarkMode" />
+<MudDialogProvider BackdropClick="false" CloseOnEscapeKey="true" CloseButton="true" />
+<MudSnackbarProvider />
+<MudPopoverProvider />
+<MudXProvider />
+
+<style class="mud-theme-darklight">@_themeState.GenerateStaticCSS()</style>
+<style class="mud-theme-static">@_themeState.GenerateDarkLightCSS(_userPreference.IsDarkMode)</style>
+
+@if (_themeState.IsLoading)
+{
+    <div class="d-flex justify-center align-center main-loading">
+        <MudImage Fluid="true" Src="images/MudX_Transparent_Logo.webp" ObjectPosition="ObjectPosition.Center" Style="height: 70vh;" />
+        <MudProgressCircular Indeterminate="true"
+                             Style="height: 200px; width: 200px; z-index: 5; opacity: 0.8; position: absolute;color: #03a9f4" />
+    </div>
+}
+else
+{
+<h1 style="visibility: collapse;color: transparent;background-color:transparent;">@GetPageTitle</h1>
+    <MudLayout>
+        <MudAppBar Elevation="4" Fixed="true" Dense="true">
+            <MudIconButton Color="Color.Inherit" Icon="@Icons.Material.Outlined.Menu" Edge="Edge.Start"
+                            OnClick="@(() => _userPreference.IsDrawerOpen = !_userPreference.IsDrawerOpen)" />
+            <MudText Style="font-weight: bold;" Class="ml-3 d-flex d-md-none">Theming</MudText>
+            <MudText Style="font-weight: bold;" Class="ml-3 d-none d-md-flex">MudBlazor Theme Creator</MudText>
+            <MudSpacer />
+            @if (_userPreference.SuperUser)
+            {
+                <MudTooltip Text="Super User Confirmed">
+                    <MudIconButton Icon="@Icons.Material.Outlined.Shield" Color=Color.Inherit UserAttributes="@(new Dictionary<string, object> { { "alt", "Super User" } })" />
+                </MudTooltip>
+                <MudSpacer />
+            }
+            @if (_userPreference.NoAds)
+            {
+                <MudTooltip Text="No Ads Confirmed">
+                    <MudIconButton Icon="@Icons.Material.Outlined.Block" Color=Color.Inherit UserAttributes="@(new Dictionary<string, object> { { "alt", "No Ads" } })" />
+                </MudTooltip>
+                <MudSpacer />
+            }
+            <MudTooltip Text="Home">
+                <MudIconButton Href="/" UserAttributes="@(new Dictionary<string, object> { { "alt", "Home Page" } })" Icon="@Icons.Material.Outlined.Home" Color="Color.Inherit" />
+            </MudTooltip>
+            <MudTooltip Text="CSS Variable Lookup">
+                <MudIconButton Href="/style" Icon="@Icons.Material.Outlined.Css" Color="Color.Inherit" UserAttributes="@(new Dictionary<string, object> { { "alt", "CSS Style Page" } })" />
+            </MudTooltip>
+            <MudTooltip Text="Save or Upload Theme">
+                <MudIconButton Href="/upload" Icon="@Icons.Material.Outlined.CloudUpload" Color="Color.Inherit" UserAttributes="@(new Dictionary<string, object> { { "alt", "Upload Theme Page" } })" />
+            </MudTooltip>
+            <MudTooltip Text="Export Theme">
+                <MudIconButton Href="/export" Icon="@Icons.Material.Outlined.ImportExport" Color="Color.Inherit" UserAttributes="@(new Dictionary<string, object> { { "alt", "Export Theme to CSS/C#/CS" } })" />
+            </MudTooltip>
+            <MudTooltip Text="About / Issues">
+                <MudIconButton Href="/about" Icon="@Icons.Material.Outlined.Info" Color="Color.Inherit" UserAttributes="@(new Dictionary<string, object> { { "alt", "Known Issues/About Us Page" } })" />
+            </MudTooltip>
+            <MudTooltip Text="Toggle Dark/Light Mode">
+                <MudIconButton id="darkToggle" OnClick="@(() => _userPreference.IsDarkMode = !_userPreference.IsDarkMode)"
+                                Icon="@(_userPreference.IsDarkMode 
+                                        ? Icons.Material.Outlined.NightsStay 
+                                        : Icons.Material.Outlined.WbSunny)"
+                                Color="Color.Inherit" />
+            </MudTooltip>
+            <LoginDisplay />
+        </MudAppBar>
+        <MudDrawer @bind-Open="_userPreference.IsDrawerOpen" ClipMode="DrawerClipMode.Docked" Width="300px"
+            Elevation="2" Variant="DrawerVariant.Persistent">
+            <ThemeDrawer />
+        </MudDrawer>
+        <MudMainContent Class="mt-12 pa-4">
+            <ErrorBoundary @ref="@_errorBoundary">
+                <ChildContent>
+                    @Body
+                </ChildContent>
+                <ErrorContent>
+                    <Error Exception="@context" Recover="@(() => _errorBoundary?.Recover())" />
+                </ErrorContent>
+            </ErrorBoundary>
+        </MudMainContent>
+    </MudLayout>
+}

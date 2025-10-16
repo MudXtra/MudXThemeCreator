@@ -1,0 +1,149 @@
+
+.main-loading {
+    background: silver;
+    width: 100%;
+    height: 100vh;
+    margin-top: -20px;
+    padding: 0px;
+}
+
+.color-container {
+    max-height: 45vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-sizing: border-box; /* includes padding in height */
+    padding: 0.25rem; /* equivalent to pa-1 */
+    margin: 0;
+}
+.color-container > *:last-child {
+    margin-bottom: 0 !important;
+}
+
+
+.palette-picker-icon {
+    width: 25px;
+    flex-grow: 0;
+    flex-shrink: 0;
+    float: right;
+}
+
+    .palette-picker-icon g rect {
+        stroke: none !important;
+    }
+
+.period-dot .mud-progress-circular-svg {
+    transform: scale(0.5); /* Reduces size to 50% */
+    margin-top: 15px; /* Pushes it down by 15px */
+}
+
+.github-image {
+    margin-bottom: -5px;
+    margin-right: 5px;
+    margin-left: 20px;
+    position: relative;
+    height: 24px;
+    width: 24px;
+}
+
+.left-text {
+    flex-grow: 1;
+    margin-right: 8px;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    float: left;
+}
+
+.center-text {
+    text-align: center !important;
+}
+
+.period-dot {
+    transform: scale(0.5); /* Reduces size to 50% */
+    margin-top: 15px; /* Pushes it down by 15px */
+}
+
+.centered-input .mud-input-root {
+    text-align: center;
+}
+
+.icon-buttons-stack {
+    gap: 0px; /* Remove extra space between the buttons */
+    margin-right: -15px;
+    margin-top: 5px;
+}
+
+.save-expansion-panels .mud-expand-panel-header {
+    padding: 0px 25px 0px 15px;
+    font-size: var(--mud-typography-h6-size);
+    font-weight: var(--mud-typography-h6-weight);
+    line-height: var(--mud-typography-h6-lineheight);
+    letter-spacing: var(--mud-typography-h6-letterspacing);
+    background-color: var(--mud-palette-secondary);
+    color: var(--mud-palette-secondary-text);
+    border-radius: 14px;
+}
+
+.shadow-selector {
+    outline: none;
+    transition: all 0.2s ease-in-out;
+    border-radius: 4px;
+    position: relative; /* Add this to position the pseudo-element relative to this element */
+}
+
+    .shadow-selector:focus {
+        color: var(--mud-palette-tertiary-text);
+        background-color: transparent;
+        z-index: 1500;
+    }
+
+        .shadow-selector:focus::after {
+            content: '';
+            background-color: var(--mud-palette-tertiary);
+            position: absolute;
+            top: 4px;
+            right: 22px;
+            bottom: 4px;
+            left: -4px;
+            border-radius: 5px; /* Slightly smaller radius for inner highlight */
+            box-shadow: 0 0 0 calc(var(--mud-space)) var(--mud-palette-tertiary);
+            pointer-events: none; /* Ensures the pseudo-element doesn't interfere with clicks */
+            z-index: -1;
+        }
+
+.rounded-popover {
+    background-color: transparent;
+    box-shadow: none;
+}
+
+.mud-drawer {
+    overflow: visible !important;
+}
+
+.codeblock {
+    position: relative;
+    background-color: var(--mud-palette-background-grey);
+    border-radius: var(--mud-default-borderradius);
+    margin: 0px 10px;
+    display: flex;
+    flex-direction: column;
+    overflow: auto; /* Enables scrolling when content exceeds max dimensions */
+}
+
+.card-standard {
+    width: 367px;
+    padding: 16px;
+    width: 100%;
+    max-height: 300px;
+    overflow: auto;
+    height: 100%;
+}
+
+.editable-div {
+    min-height: 100px;
+    padding: 8px;
+    outline: none;
+    max-height: 5lh;
+    overflow-y: auto;
+}

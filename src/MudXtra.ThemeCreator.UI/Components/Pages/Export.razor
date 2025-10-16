@@ -1,0 +1,138 @@
+@page "/export"
+@using MudXtra.ThemeCreator.Infrastructure.Services
+
+<HeadContent>
+    <meta name="description" content="Allows developers to export and copy the CSS, C#, CS from MudBlazor Theme Creator to use in their own project." />
+    <meta property="og:description" content="Allows developers to export and copy the CSS, C#, CS from MudBlazor Theme Creator to use in their own project." />
+</HeadContent>
+<PageTitle>Export MudBlazor Theme in CSS or C# or CS</PageTitle>
+<MudGrid Justify="Justify.Center">
+    <MudItem xs="12">
+        <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.Center">
+            <MudText Typo="Typo.h3">Export MudBlazor Theme</MudText>
+        </MudStack>
+    </MudItem>
+
+    <MudItem xs="12">
+        <MudPaper Elevation="2" Class="pa-4 mb-4 mud-width-full">
+            <MudContainer Style="text-align: center;">
+                <MudText>
+                    This page will help you export your MudBlazor theme to use in your application.
+                    It will provide you with a C# class to reference in your application or CSS files to include in your application.
+                    Expand one of the panels to get more information. If you change anything in the theme or select a new theme it will
+                    automatically update the values.
+                </MudText>
+            </MudContainer>
+        </MudPaper>
+    </MudItem>
+    @if (!NoAds)
+    {
+        <MudItem xs="12">
+            <ExportAd />
+        </MudItem>
+    }
+</MudGrid>
+<MudExpansionPanels Class="save-expansion-panels" MultiExpansion="true">
+
+    <MudExpansionPanel Text="Theme Class MudBlazor v7.x.x in C#">
+        <MudExpansionPanel Text="Instructions">
+            This will show a C# class you can place somewhere in your application and reference from ThemeProvider in your MainLayout.razor.
+            <ol class="px-6 pb-1 pt-3">
+                <li>Copy the Contents below, copy icon is in upper right.</li>
+                <li>In Visual Studio "Add Class" if you do not already have a custom theme class.</li>
+                <li>Name that Class something like DefaultThemes or CustomThemes as you wish</li>
+                <li>
+                    Inside the class paste the contents of your clipboard, making sure to update the themename
+                    <ul class="pl-3 pb-1"><li>- public static readonly MudTheme [ThemeNameHere]</li></ul>
+                </li>
+            </ol>
+        </MudExpansionPanel>
+
+        <CodeBlock Title="V7 Code Export" @key="keyId" Code="@_themeState.GenerateCSharpCodeV7()" />
+    </MudExpansionPanel>
+
+    <MudExpansionPanel Text="Theme Class MudBlazor v8.x.x in C#">
+        <MudExpansionPanel Text="Instructions">
+            This will show a C# class you can place somewhere in your application and reference from ThemeProvider in your MainLayout.razor.
+            <ol class="px-6 pb-1 pt-3">
+                <li>Copy the Contents below, copy icon is in upper right.</li>
+                <li>In Visual Studio "Add Class" if you do not already have a custom theme class.</li>
+                <li>Name that Class something like DefaultThemes or CustomThemes as you wish</li>
+                <li>
+                    Inside the class paste the contents of your clipboard, making sure to update the themename
+                    <ul class="pl-3 pb-1"><li>- public static readonly MudTheme [ThemeNameHere]</li></ul>
+                </li>
+            </ol>
+        </MudExpansionPanel>
+
+        <CodeBlock @key="keyId" Code="@_themeState.GenerateCSharpCodeV8()" Title="V8 Code Export" />
+    </MudExpansionPanel>
+
+    <MudExpansionPanel Text="CSS Classes">
+        <MudExpansionPanel Text="Instructions">
+            Copy each of these into a separate CSS file you can place in your application's wwwroot folder, then add the following line to your App.razor/Index.html.
+            It's purpose is to overwrite all the variables MudBlazor uses to theme components except for light/dark mode.
+            <CodeBlock Code="&lt;link href='themename-static.css' rel='stylesheet' /&gt;" Title="CSS Link" Language="CodeLanguage.HTML" />
+
+            In your MainLayout or other layout file add a section:
+            @{
+                var codeSnippet = @"<link @if (isDark) {
+            href=""themename-dark.css""
+            } else {
+            href=""themename-light.css""
+            } rel=""stylesheet"" />";
+            }
+            <CodeBlock Code="@codeSnippet" Title="CSS Code Snippet" />
+
+            Then add a boolean isDark to output dark or light mode CSS depending on your need. If you don't plan to offer both, then just include the -light or -dark in your App.razor.
+        </MudExpansionPanel>
+
+        <MudExpansionPanel Text="Static CSS">
+            <CodeBlock @key="keyId" Language="CodeLanguage.CSS" Title="Static CSS" Code="@_themeState.GenerateStaticCSS()" />
+        </MudExpansionPanel>
+
+        <MudExpansionPanel Text="Dark Mode CSS">
+            <CodeBlock @key="keyId" Language="CodeLanguage.CSS" Title="Dark Mode CSS" Code="@_themeState.GenerateDarkLightCSS(true)" />
+        </MudExpansionPanel>
+
+        <MudExpansionPanel Text="Light Mode CSS">
+            <CodeBlock @key="keyId" Language="CodeLanguage.CSS" Title="Light Mode CSS" Code="@_themeState.GenerateDarkLightCSS(false)" />
+        </MudExpansionPanel>
+    </MudExpansionPanel>
+</MudExpansionPanels>
+
+@code {
+    private int keyId = 0;
+
+    [CascadingParameter(Name="NoAds")]
+    public bool NoAds { get; set; }
+
+    [Inject]
+    private ThemeStateService _themeState { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        _themeState.PropertyChanged += (s, e) => RefreshData();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+        if (firstRender)
+        {
+            RefreshData();
+        }
+    }
+
+    public void Dispose()
+    {
+        _themeState.PropertyChanged -= (s, e) => RefreshData();
+    }
+
+    private void RefreshData()
+    {
+        keyId++;
+        StateHasChanged();
+    }
+}

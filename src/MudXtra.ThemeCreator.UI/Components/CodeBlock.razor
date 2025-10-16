@@ -1,0 +1,36 @@
+@using System.Text.Json
+
+<div class="codeblock" style="max-height:@MaxHeight; max-width:@MaxWidth;">
+    <MudXCodeBlock Codes="[_codeFile]" />
+</div>
+
+<MudXCopyToClipboard @ref="_copy" Snackbar />
+
+@code {
+    [CascadingParameter(Name = "IsDarkTheme")]
+    public bool IsDarkTheme { get; set; }
+
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = default!;
+
+    [Parameter]
+    public string? Code { get; set; }
+
+    [Parameter]
+    public MudX.CodeLanguage Language { get; set; } = MudX.CodeLanguage.CSharp;
+
+    [Parameter]
+    public string MaxHeight { get; set; } = "500px"; // Default max-height
+
+    [Parameter]
+    public string MaxWidth { get; set; } = "100%"; // Default max-width
+
+    private MudXCopyToClipboard _copy = default!;
+    private MudX.CodeFile _codeFile = default!;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        _codeFile = new MudX.CodeFile(Title, Code ?? string.Empty, Language);
+    }
+}
