@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using MudXtra.ThemeCreator.Infrastructure.Data;
 using Npgsql;
 
@@ -8,6 +9,13 @@ public static class IServiceCollectionExtensions
 {
     public static async Task AddThemeDataBaseConnection(this IServiceCollection services, IConfiguration config)
     {
+        if (string.Equals(config["ThemeCreator:DatabaseProvider"], "InMemory", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.WriteLine("Using in-memory Theme Creator database (ThemeCreator:DatabaseProvider=InMemory).");
+            services.AddDbContextFactory<ThemeDbContext>(cfg => cfg.UseInMemoryDatabase("MudXThemeCreator"));
+            return;
+        }
+
         var primaryConn = config.GetConnectionString("postgresql");
         primaryConn = primaryConn?.Replace("[dbName]", config["dbName"]);
         primaryConn = primaryConn?.Replace("[dbPort]", config["dbPort"]);
@@ -16,28 +24,37 @@ public static class IServiceCollectionExtensions
 
         var altConnString = config.GetConnectionString("vs_sql_server");
 
-        bool canUsePrimary = false;
+        if (await CanConnectAsync(() => new NpgsqlConnection(primaryConn)))
+        {
+            Console.WriteLine("Connected to primary PostgreSQL database for Theme Creator.");
+            services.AddDbContextFactory<ThemeDbContext>(cfg => cfg.UseNpgsql(primaryConn));
+            return;
+        }
+
+        if (await CanConnectAsync(() => new SqlConnection(altConnString)))
+        {
+            Console.WriteLine("Connected to SQL Server database for Theme Creator.");
+            services.AddDbContextFactory<ThemeDbContext>(cfg => cfg.UseSqlServer(altConnString));
+            return;
+        }
+
+        Console.WriteLine("No external Theme Creator database available; using in-memory database for local development.");
+        services.AddDbContextFactory<ThemeDbContext>(cfg => cfg.UseInMemoryDatabase("MudXThemeCreator"));
+    }
+
+    private static async Task<bool> CanConnectAsync(Func<System.Data.Common.DbConnection> connectionFactory)
+    {
         try
         {
-            // Try connecting to primary DB with a 1-second timeout
-            using var conn = new NpgsqlConnection($"{primaryConn};");
-            var cts = new CancellationTokenSource(TimeSpan.FromSeconds(1));
+            await using var conn = connectionFactory();
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(1));
             await conn.OpenAsync(cts.Token);
-            canUsePrimary = true;
-            Console.WriteLine("Connected to Primary PostgreSQL DB");
+            return true;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Primary DB connection failed switching to built in VS SQL Server: {ex.Message}");
-        }
-
-        if (canUsePrimary)
-        {
-            services.AddDbContextFactory<ThemeDbContext>(cfg => cfg.UseNpgsql(primaryConn));
-        }
-        else
-        {
-            services.AddDbContextFactory<ThemeDbContext>(cfg => cfg.UseSqlServer(altConnString));
+            Console.WriteLine($"Theme Creator database connection failed: {ex.Message}");
+            return false;
         }
     }
 }

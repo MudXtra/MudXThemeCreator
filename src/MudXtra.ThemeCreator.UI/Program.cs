@@ -93,14 +93,19 @@ builder.Services.Configure<HttpsRedirectionOptions>(options =>
 });
 builder.Services.ConfigureApplicationCookie(options =>
 {
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+        ? CookieSecurePolicy.SameAsRequest
+        : CookieSecurePolicy.Always;
 });
 
 var app = builder.Build();
 
 app.UseForwardedHeaders();
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 app.MapStaticAssets();
 app.UseAntiforgery();
 app.UseAuthentication();
