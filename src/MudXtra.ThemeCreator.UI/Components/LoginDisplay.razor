@@ -2,7 +2,13 @@
 @inject NavigationManager Navigation
 @inject IConfiguration Configuration
 
-@if (Configuration.UseAuth0())
+@if (Configuration.UseDevelopmentAuth())
+{
+    <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Outlined" Class="mx-2">
+        Local dev
+    </MudChip>
+}
+else if (Configuration.UseAuth0())
 {
     <AuthorizeView>
         <Authorized>

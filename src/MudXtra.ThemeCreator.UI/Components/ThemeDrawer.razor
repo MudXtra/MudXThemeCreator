@@ -1,5 +1,14 @@
 ﻿
 <div class="ma-2" style="text-align: center;">
+    @if (_showLocalCatalogHint)
+    {
+        <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3 text-left">
+            Local dev only seeds the default MudBlazor theme. Community themes live in the online catalog.
+            <MudLink Href="https://themes.mudx.org/" Target="_blank">Browse on themes.mudx.org</MudLink>,
+            export C#, then import via <MudLink Href="/upload">Upload</MudLink>.
+        </MudAlert>
+    }
+
     <MudSelect @key="_selectKey"
                Value="_userPreference.SelectedThemeIndex"
                ValueChanged="@(async (int val) => {_userPreference.SelectedThemeIndex = val; await _themeState.LoadTheme(val); })"

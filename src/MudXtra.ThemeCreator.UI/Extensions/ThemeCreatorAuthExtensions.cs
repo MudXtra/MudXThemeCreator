@@ -7,14 +7,32 @@ namespace MudXtra.ThemeCreator.UI.Extensions;
 
 internal static class ThemeCreatorAuthExtensions
 {
+    public static string GetAuthenticationMode(this IConfiguration config)
+        => config["ThemeCreator:Authentication"] ?? "Auth0";
+
     public static bool UseAuth0(this IConfiguration config)
-        => !string.Equals(config["ThemeCreator:Authentication"], "None", StringComparison.OrdinalIgnoreCase);
+        => string.Equals(config.GetAuthenticationMode(), "Auth0", StringComparison.OrdinalIgnoreCase);
+
+    public static bool UseDevelopmentAuth(this IConfiguration config)
+        => string.Equals(config.GetAuthenticationMode(), "Development", StringComparison.OrdinalIgnoreCase);
+
+    public static bool UseAnonymousAuth(this IConfiguration config)
+        => string.Equals(config.GetAuthenticationMode(), "None", StringComparison.OrdinalIgnoreCase);
 
     public static void AddThemeCreatorAuthentication(this IServiceCollection services, IConfiguration config)
     {
-        if (!config.UseAuth0())
+        if (config.UseAnonymousAuth())
         {
             services.AddAuthentication();
+            return;
+        }
+
+        if (config.UseDevelopmentAuth())
+        {
+            services.AddAuthentication(DevelopmentAuthenticationDefaults.AuthenticationScheme)
+                .AddScheme<AuthenticationSchemeOptions, DevelopmentAuthenticationHandler>(
+                    DevelopmentAuthenticationDefaults.AuthenticationScheme,
+                    null);
             return;
         }
 
