@@ -1,12 +1,14 @@
 ﻿using System.ComponentModel;
 using Microsoft.AspNetCore.Components;
 using MudXtra.ThemeCreator.Infrastructure.Services;
+using MudXtra.ThemeCreator.UI.Extensions;
 
 namespace MudXtra.ThemeCreator.UI.Components;
 
 public partial class ThemeDrawer : ComponentBase
 {
     private int _selectKey = 0;
+    private bool _showLocalCatalogHint;
 
     [Inject]
     private UserPreferencesService _userPreference { get; set; } = default!;
@@ -14,9 +16,13 @@ public partial class ThemeDrawer : ComponentBase
     [Inject]
     private ThemeStateService _themeState { get; set; } = default!;
 
+    [Inject]
+    private IConfiguration Configuration { get; set; } = default!;
+
     protected override void OnInitialized()
     {
         base.OnInitialized();
+        _showLocalCatalogHint = Configuration.UseDevelopmentAuth() || Configuration.UseAnonymousAuth();
         _userPreference.PropertyChanged += (s, e) => StateHasChanged();
         _themeState.PropertyChanged += UpdateState;
     }

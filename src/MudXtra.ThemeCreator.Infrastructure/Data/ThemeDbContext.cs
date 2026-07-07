@@ -26,44 +26,31 @@ namespace MudXtra.ThemeCreator.Infrastructure.Data
 
         private void SeedInMemoryDatabase()
         {
-            var seedData = new Dictionary<Type, Func<IEnumerable<object>>>
-            {
-                { typeof(ThemePalette), () => SeedData.GetInitialPalettes() },
-                { typeof(ThemeOption), () => SeedData.GetInitialOptions() },
-                { typeof(CustomTheme), () => SeedData.GetCustomThemes() },
-                { typeof(ThemeSelection), () => SeedData.GetThemeSelection() },
-                { typeof(CustomLayoutProperty), () => SeedData.GetCustomLayoutProperties() },
-                { typeof(CustomShadow), () => SeedData.GetCustomShadows() },
-                { typeof(CustomTypography), () => SeedData.GetCustomTypographies() },
-                { typeof(CustomZIndex), () => SeedData.GetCustomZIndexes() },
-                { typeof(MappedTheme), () => SeedData.GetMappedThemes() },
-                { typeof(MappedCssVariables), () => SeedData.GetMappedCssVariables() }
-            };
+            SeedSet(SeedData.GetInitialPalettes());
+            SeedSet(SeedData.GetInitialOptions());
+            SeedSet(SeedData.GetCustomThemes());
+            SeedSet(SeedData.GetThemeSelection());
+            SeedSet(SeedData.GetCustomLayoutProperties());
+            SeedSet(SeedData.GetCustomShadows());
+            SeedSet(SeedData.GetCustomTypographies());
+            SeedSet(SeedData.GetCustomZIndexes());
+            SeedSet(SeedData.GetMappedThemes());
+            SeedSet(SeedData.GetMappedCssVariables());
+            SaveChanges();
+        }
 
-            foreach (var (type, getData) in seedData)
+        private void SeedSet<TEntity>(IEnumerable<TEntity> entities) where TEntity : class
+        {
+            foreach (var entity in entities)
             {
-                var entities = getData().ToList();
-
-                // Reset Id to 0 for in-memory use
-                foreach (var entity in entities)
+                var idProperty = typeof(TEntity).GetProperty("Id");
+                if (idProperty is { CanWrite: true })
                 {
-                    var idProperty = entity.GetType().GetProperty("Id");
-                    if (idProperty != null && idProperty.CanWrite)
-                    {
-                        idProperty.SetValue(entity, 0);
-                    }
+                    idProperty.SetValue(entity, 0);
                 }
-
-                // Dynamically get the correct DbSet<TEntity> and add entities
-                var setMethod = typeof(DbContext).GetMethod(nameof(DbContext.Set), Type.EmptyTypes)!
-                                                 .MakeGenericMethod(type);
-                var dbSet = setMethod.Invoke(this, null);
-                var addRangeMethod = dbSet!.GetType().GetMethod(nameof(DbSet<object>.AddRange));
-
-                addRangeMethod!.Invoke(dbSet, [entities]);
             }
 
-            SaveChanges();
+            Set<TEntity>().AddRange(entities);
         }
 
         public DbSet<ThemeOption> ThemeOptions { get; set; }

@@ -1,7 +1,4 @@
-using System.IdentityModel.Tokens.Jwt;
-using Auth0.AspNetCore.Authentication;
 using Blazored.LocalStorage;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -72,13 +69,8 @@ builder.Services.AddHsts(options =>
     options.MaxAge = TimeSpan.FromDays(365);
 });
 
-// Authentication
-JwtSecurityTokenHandler.DefaultMapInboundClaims = false;
-builder.Services.AddAuth0WebAppAuthentication(options =>
-{
-    options.Domain = config["domain"]!;
-    options.ClientId = config["clientid"]!;
-});
+// Authentication (Auth0 in production; disabled locally via ThemeCreator:Authentication=None)
+builder.Services.AddThemeCreatorAuthentication(config);
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedFor;
@@ -93,38 +85,25 @@ builder.Services.Configure<HttpsRedirectionOptions>(options =>
 });
 builder.Services.ConfigureApplicationCookie(options =>
 {
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+        ? CookieSecurePolicy.SameAsRequest
+        : CookieSecurePolicy.Always;
 });
 
 var app = builder.Build();
 
 app.UseForwardedHeaders();
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 app.MapStaticAssets();
 app.UseAntiforgery();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapGet("/Account/Login", async (HttpContext httpContext, string returnUrl = "/") =>
-{
-    var authenticationProperties = new LoginAuthenticationPropertiesBuilder()
-        .WithScope("openid profile email roles")
-        .WithRedirectUri(returnUrl)
-        .Build();
-
-    await httpContext.ChallengeAsync(Auth0Constants.AuthenticationScheme, authenticationProperties);
-});
-
-app.MapGet("/Account/Logout", async (HttpContext httpContext) =>
-{
-    var authenticationProperties = new LogoutAuthenticationPropertiesBuilder()
-            .WithRedirectUri("/")
-            .Build();
-
-    await httpContext.SignOutAsync(Auth0Constants.AuthenticationScheme, authenticationProperties);
-    await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-});
+app.MapThemeCreatorAccountEndpoints(config);
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
